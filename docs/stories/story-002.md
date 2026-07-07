@@ -2,10 +2,11 @@
 storyId: "1.2"
 storyKey: "1-2-parse-v1-commands-and-define-exit-codes"
 title: "Parse V1 Commands and Define Exit Codes"
-status: ready-for-dev
+status: review
 epic: "Epic 1: Runnable CLI Foundation"
 created: 2026-07-07
 updated: 2026-07-07
+baseline_commit: "38d1dcfc88e41a6360e9e459f0ef2abd01975291"
 source:
   - "../../docs/product-brief.md"
   - "../../docs/prd.md"
@@ -19,7 +20,7 @@ previousStory:
 
 # Story 1.2: Parse V1 Commands and Define Exit Codes
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -104,15 +105,15 @@ Do not implement:
 
 ## Tasks
 
-- [ ] Add CLI parser types in `src/FolderPrint.Cli` for parsed commands and usage errors. (AC: 1-5)
-- [ ] Add `ExitCodes` constants in `src/FolderPrint.Cli`. (AC: 6-7)
-- [ ] Update `Program.cs` only enough to call the parser, write minimal usage/error output for usage errors, and return parser-level exit codes. (AC: 8-9)
-- [ ] Add or update the test project reference so `FolderPrint.Tests` can test `FolderPrint.Cli` parser types. (AC: 1-8)
-- [ ] Add parser tests for all six valid V1 commands. (AC: 1-4)
-- [ ] Add parser tests for unknown command, empty input, missing folder argument, and extra arguments. (AC: 5)
-- [ ] Add exit-code tests for all required named constants and numeric values. (AC: 6-7)
-- [ ] Run build and test validation from the repository root. (AC: 9)
-- [ ] Confirm no catalog, scanner, hashing, domain model, command execution, or V2 behavior was implemented. (AC: 9)
+- [x] Add CLI parser types in `src/FolderPrint.Cli` for parsed commands and usage errors. (AC: 1-5)
+- [x] Add `ExitCodes` constants in `src/FolderPrint.Cli`. (AC: 6-7)
+- [x] Update `Program.cs` only enough to call the parser, write minimal usage/error output for usage errors, and return parser-level exit codes. (AC: 8-9)
+- [x] Add or update the test project reference so `FolderPrint.Tests` can test `FolderPrint.Cli` parser types. (AC: 1-8)
+- [x] Add parser tests for all six valid V1 commands. (AC: 1-4)
+- [x] Add parser tests for unknown command, empty input, missing folder argument, and extra arguments. (AC: 5)
+- [x] Add exit-code tests for all required named constants and numeric values. (AC: 6-7)
+- [x] Run build and test validation from the repository root. (AC: 9)
+- [x] Confirm no catalog, scanner, hashing, domain model, command execution, or V2 behavior was implemented. (AC: 9)
 
 ## Validation Commands
 
@@ -201,16 +202,46 @@ Story 1.1 established these patterns:
 
 ### Agent Model Used
 
-TBD by dev agent.
+GPT-5 Codex
 
 ### Debug Log References
 
-TBD by dev agent.
+- `dotnet test` red phase failed before parser types existed.
+- `dotnet restore`
+- `dotnet build`
+- `dotnet test`
+- `dotnet run --project src/FolderPrint.Cli -- list`
+- `dotnet run --project src/FolderPrint.Cli -- unknown-command`
+- `dotnet run --project src/FolderPrint.Cli -- register`
+- `dotnet list src/FolderPrint.Core/FolderPrint.Core.csproj reference`
+- `dotnet list tests/FolderPrint.Tests/FolderPrint.Tests.csproj reference`
+- Scope scan for out-of-story components and dependencies.
 
 ### Completion Notes List
 
-TBD by dev agent.
+- Added a minimal manual parser for the six V1 command names and required argument shapes.
+- Added parser result, parsed command, command kind, and exit-code types in `FolderPrint.Cli`.
+- Updated `Program.cs` to return parser-level success or usage-error exit codes without dispatching product behavior.
+- Added CLI parser and exit-code tests covering valid commands, invalid shapes, and architecture-approved exit-code values.
+- Added `FolderPrint.Tests` -> `FolderPrint.Cli` project reference for CLI parser tests.
+- Verified restore, build, tests, CLI smoke checks, project references, and scope guardrails.
+- Confirmed no catalog, scanner, hashing, domain model, command execution, or V2 behavior was implemented.
 
 ### File List
 
-TBD by dev agent.
+- `src/FolderPrint.Cli/CommandKind.cs`
+- `src/FolderPrint.Cli/CommandParseResult.cs`
+- `src/FolderPrint.Cli/CommandParser.cs`
+- `src/FolderPrint.Cli/ExitCodes.cs`
+- `src/FolderPrint.Cli/ParsedCommand.cs`
+- `src/FolderPrint.Cli/Program.cs`
+- `tests/FolderPrint.Tests/FolderPrint.Tests.csproj`
+- `tests/FolderPrint.Tests/Cli/CommandParserTests.cs`
+- `tests/FolderPrint.Tests/Cli/ExitCodesTests.cs`
+- `_bmad-output/implementation-artifacts/1-2-parse-v1-commands-and-define-exit-codes.md`
+- `docs/stories/story-002.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+
+## Change Log
+
+- 2026-07-07: Implemented Story 1.2 manual CLI parser, exit-code constants, parser-level Program wiring, tests, and BMAD status updates.

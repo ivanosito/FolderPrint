@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FolderPrint.Core\FolderPrint.Core.csproj" />
+    <ProjectReference Include="..\..\src\FolderPrint.Cli\FolderPrint.Cli.csproj" />
   </ItemGroup>
 
 </Project>
