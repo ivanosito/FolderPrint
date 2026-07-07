@@ -31,8 +31,8 @@ tracking_system: file-system
 story_location: C:/Users/adria/source/repos/BMAD/FolderPrint/_bmad-output/implementation-artifacts
 
 development_status:
-  epic-1: backlog
-  1-1-create-solution-and-project-boundaries: backlog
+  epic-1: in-progress
+  1-1-create-solution-and-project-boundaries: ready-for-dev
   1-2-parse-v1-commands-and-define-exit-codes: backlog
   1-3-load-an-empty-catalog-and-list-registered-folders: backlog
   epic-1-retrospective: optional
