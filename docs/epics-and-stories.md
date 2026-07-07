@@ -2,7 +2,8 @@
 stepsCompleted:
   - step-01-validate-prerequisites
   - step-02-design-epics
-  - step-03-create-stories`r`n  - step-04-final-validation
+  - step-03-create-stories
+  - step-04-final-validation
 inputDocuments:
   - "_bmad-output/planning-artifacts/prds/prd-FolderPrint-2026-07-07/prd.md"
   - "_bmad-output/planning-artifacts/architecture/architecture-FolderPrint-2026-07-07/ARCHITECTURE-SPINE.md"
