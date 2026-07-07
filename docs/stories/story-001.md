@@ -2,16 +2,23 @@
 storyId: "1.1"
 storyKey: "1-1-create-solution-and-project-boundaries"
 title: "Create Solution and Project Boundaries"
-status: ready-for-dev
+status: done
 epic: "Epic 1: Runnable CLI Foundation"
 created: 2026-07-07
 updated: 2026-07-07
-source: "../../_bmad-output/implementation-artifacts/1-1-create-solution-and-project-boundaries.md"
+baseline_commit: "0099a791984ea9fbaf7438f69cfc64077817c319"
+source:
+  - "../../docs/product-brief.md"
+  - "../../docs/prd.md"
+  - "../../docs/architecture.md"
+  - "../../docs/epics-and-stories.md"
+  - "../../docs/sprint-plan-001.md"
+  - "sprint-status.yaml"
 ---
 
 # Story 1.1: Create Solution and Project Boundaries
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -87,16 +94,16 @@ dotnet add tests/FolderPrint.Tests/FolderPrint.Tests.csproj reference src/Folder
 
 ## Tasks
 
-- [ ] Create `FolderPrint.sln`.
-- [ ] Create `src/FolderPrint.Cli` as a .NET 8 console project.
-- [ ] Create `src/FolderPrint.Core` as a .NET 8 class library.
-- [ ] Create `tests/FolderPrint.Tests` as a .NET 8 xUnit project.
-- [ ] Add all projects to `FolderPrint.sln`.
-- [ ] Add `FolderPrint.Cli` -> `FolderPrint.Core` project reference.
-- [ ] Add test project references required for smoke tests.
-- [ ] Add or keep one minimal smoke test.
-- [ ] Run restore, build, and test from repository root.
-- [ ] Confirm no out-of-scope product behavior was implemented.
+- [x] Create `FolderPrint.sln`.
+- [x] Create `src/FolderPrint.Cli` as a .NET 8 console project.
+- [x] Create `src/FolderPrint.Core` as a .NET 8 class library.
+- [x] Create `tests/FolderPrint.Tests` as a .NET 8 xUnit project.
+- [x] Add all projects to `FolderPrint.sln`.
+- [x] Add `FolderPrint.Cli` -> `FolderPrint.Core` project reference.
+- [x] Add test project references required for smoke tests.
+- [x] Add or keep one minimal smoke test.
+- [x] Run restore, build, and test from repository root.
+- [x] Confirm no out-of-scope product behavior was implemented.
 
 ## Validation Commands
 
@@ -124,7 +131,7 @@ dotnet list tests/FolderPrint.Tests/FolderPrint.Tests.csproj reference
 - Solution and project names match the architecture exactly.
 - `FolderPrint.Core` has no dependency on `FolderPrint.Cli`.
 - No V2 scope or V1 non-goal behavior is introduced.
-- Sprint status for this story can move from `ready-for-dev` to `in-progress` when implementation starts.
+- Sprint status for this story is `done` after approved code review.
 
 ## Dev Notes
 
@@ -163,16 +170,38 @@ tests/
 
 ### Agent Model Used
 
-TBD by dev agent.
+GPT-5 Codex
 
 ### Debug Log References
 
-TBD by dev agent.
+- `dotnet restore`
+- `dotnet build`
+- `dotnet test`
+- `dotnet sln FolderPrint.sln list`
+- `dotnet list src/FolderPrint.Cli/FolderPrint.Cli.csproj reference`
+- `dotnet list src/FolderPrint.Core/FolderPrint.Core.csproj reference`
+- `dotnet list tests/FolderPrint.Tests/FolderPrint.Tests.csproj reference`
 
 ### Completion Notes List
 
-TBD by dev agent.
+- Created the .NET 8 solution and three-project structure required by the architecture.
+- Added the required dependency direction: CLI references Core, Core has no project references, and Tests references Core for smoke validation.
+- Replaced the empty xUnit template test with a minimal project-reference smoke test.
+- Verified restore, build, test, solution membership, and project references from the repository root.
+- Confirmed no Story 1.2 parser behavior, domain models, scanner, hasher, catalog, verification, duplicate detection, reporting, GUI, database, cloud, encryption, monitoring, network-share, or ignore-rule behavior was implemented.
 
 ### File List
 
-TBD by dev agent.
+- `FolderPrint.sln`
+- `src/FolderPrint.Cli/FolderPrint.Cli.csproj`
+- `src/FolderPrint.Cli/Program.cs`
+- `src/FolderPrint.Core/FolderPrint.Core.csproj`
+- `src/FolderPrint.Core/Class1.cs`
+- `tests/FolderPrint.Tests/FolderPrint.Tests.csproj`
+- `tests/FolderPrint.Tests/UnitTest1.cs`
+- `_bmad-output/implementation-artifacts/1-1-create-solution-and-project-boundaries.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+
+## Change Log
+
+- 2026-07-07: Implemented Story 1.1 solution/project scaffold, smoke test wiring, validation, and BMAD status updates.
