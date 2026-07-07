@@ -2,7 +2,7 @@
 storyId: "1.2"
 storyKey: "1-2-parse-v1-commands-and-define-exit-codes"
 title: "Parse V1 Commands and Define Exit Codes"
-status: review
+status: done
 epic: "Epic 1: Runnable CLI Foundation"
 created: 2026-07-07
 updated: 2026-07-07
@@ -20,7 +20,7 @@ previousStory:
 
 # Story 1.2: Parse V1 Commands and Define Exit Codes
 
-Status: review
+Status: done
 
 ## Story
 
