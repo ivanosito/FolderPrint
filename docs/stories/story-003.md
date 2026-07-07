@@ -2,7 +2,7 @@
 storyId: "2.1"
 storyKey: "2-1-implement-domain-models-and-sha-256-hashing"
 title: "Implement Domain Models and SHA-256 Hashing"
-status: review
+status: done
 epic: "Epic 2: Register Trusted Folder Baselines"
 created: 2026-07-07
 updated: 2026-07-07
@@ -22,7 +22,7 @@ previousStories:
 
 # Story 2.1: Implement Domain Models and SHA-256 Hashing
 
-Status: review
+Status: done
 
 ## Story
 
@@ -242,6 +242,8 @@ GPT-5 Codex
 
 - 2026-07-07: Created Story 2.1 as Sprint 001 stretch story limited to domain models and FileHasher.
 - 2026-07-07: Implemented Story 2.1 domain models, SHA-256 hasher, tests, and BMAD review status update.
+- 2026-07-07: Marked Story 2.1 done after code review approval.
+
 
 
 
