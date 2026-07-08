@@ -2,10 +2,11 @@
 storyId: "1.3"
 storyKey: "1-3-load-an-empty-catalog-and-list-registered-folders"
 title: "Load an Empty Catalog and List Registered Folders"
-status: ready-for-dev
+status: review
 epic: "Epic 1: Runnable CLI Foundation"
 created: 2026-07-08
 updated: 2026-07-08
+baseline_commit: '5f74e2c8b6aa529a9f1deed43032aba83c50d792'
 source:
   - "../../docs/product-brief.md"
   - "../../docs/prd.md"
@@ -21,7 +22,7 @@ previousStories:
 
 # Story 1.3: Load an Empty Catalog and List Registered Folders
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -97,18 +98,18 @@ Do not implement:
 
 ## Tasks
 
-- [ ] Add minimal Core catalog model/load types for an empty catalog. (AC: 1, 4, 6)
-- [ ] Add catalog path resolution with a test-replaceable path. (AC: 6)
-- [ ] Implement catalog load behavior: missing file returns empty catalog; malformed JSON returns catalog error. (AC: 1, 4)
-- [ ] Add CLI dispatch for `CommandKind.List` to load the catalog and print empty-list output. (AC: 2, 3, 5)
-- [ ] Map catalog load errors from `list` to `ExitCodes.CatalogError`. (AC: 5)
-- [ ] Preserve existing usage-error behavior for invalid parser input. (AC: 7)
-- [ ] Add xUnit tests for missing catalog load behavior. (AC: 1)
-- [ ] Add xUnit tests for malformed JSON handling and no overwrite behavior. (AC: 4)
-- [ ] Add CLI-level test or focused entry-point seam test proving empty `list` exits success. (AC: 2, 3)
-- [ ] Add CLI-level test or focused entry-point seam test proving malformed catalog maps to `CatalogError`. (AC: 5)
-- [ ] Run validation commands from the repository root. (AC: 8, 9)
-- [ ] Confirm no scanner, registration, verification, duplicate detection, refresh, unregister, V2 scope, or new runtime dependency was implemented.
+- [x] Add minimal Core catalog model/load types for an empty catalog. (AC: 1, 4, 6)
+- [x] Add catalog path resolution with a test-replaceable path. (AC: 6)
+- [x] Implement catalog load behavior: missing file returns empty catalog; malformed JSON returns catalog error. (AC: 1, 4)
+- [x] Add CLI dispatch for `CommandKind.List` to load the catalog and print empty-list output. (AC: 2, 3, 5)
+- [x] Map catalog load errors from `list` to `ExitCodes.CatalogError`. (AC: 5)
+- [x] Preserve existing usage-error behavior for invalid parser input. (AC: 7)
+- [x] Add xUnit tests for missing catalog load behavior. (AC: 1)
+- [x] Add xUnit tests for malformed JSON handling and no overwrite behavior. (AC: 4)
+- [x] Add CLI-level test or focused entry-point seam test proving empty `list` exits success. (AC: 2, 3)
+- [x] Add CLI-level test or focused entry-point seam test proving malformed catalog maps to `CatalogError`. (AC: 5)
+- [x] Run validation commands from the repository root. (AC: 8, 9)
+- [x] Confirm no scanner, registration, verification, duplicate detection, refresh, unregister, V2 scope, or new runtime dependency was implemented.
 
 ## Validation Commands
 
@@ -192,14 +193,50 @@ Select-String -Path src/**/*.cs,tests/**/*.cs -Pattern 'FolderScanner|Verificati
 
 ### Agent Model Used
 
-TBD by dev agent
+GPT-5 Codex
 
 ### Debug Log References
 
+- `dotnet test` red phase failed because `FolderPrint.Core.Catalog` and `CliRunner` did not exist yet.
+- `dotnet test` green phase passed with 31 tests.
+- `dotnet restore`
+- `dotnet build`
+- `dotnet test`
+- `dotnet run --project src/FolderPrint.Cli -- list`
+- `dotnet list src/FolderPrint.Core/FolderPrint.Core.csproj reference`
+- Scope scan for out-of-story components and dependencies returned no matches.
+
 ### Completion Notes List
+
+- Added minimal Core catalog load types under `FolderPrint.Core.Catalog`.
+- Implemented missing-catalog load behavior as an empty `IntegrityCatalog` without creating or saving `catalog.json`.
+- Implemented malformed JSON handling as a typed catalog error without overwriting the file.
+- Added injectable catalog path behavior through `CatalogStore` constructor and default `%AppData%\FolderPrint\catalog.json` resolution through `CatalogPathProvider`.
+- Added `CliRunner` to keep CLI dispatch/output separate from Core catalog behavior.
+- Updated `Program.cs` to dispatch through `CliRunner`.
+- Implemented `list` output for empty catalog and catalog-error exit mapping.
+- Added xUnit coverage for missing catalog, malformed JSON preservation, empty list success, and malformed list catalog error.
+- Confirmed no scanner, registration, verification, duplicate detection, refresh, unregister, V2 scope, or new external dependency was implemented.
 
 ### File List
 
+- `src/FolderPrint.Core/Catalog/IntegrityCatalog.cs`
+- `src/FolderPrint.Core/Catalog/CatalogLoadResult.cs`
+- `src/FolderPrint.Core/Catalog/CatalogPathProvider.cs`
+- `src/FolderPrint.Core/Catalog/CatalogStore.cs`
+- `src/FolderPrint.Cli/CliRunner.cs`
+- `src/FolderPrint.Cli/Program.cs`
+- `tests/FolderPrint.Tests/Catalog/CatalogStoreTests.cs`
+- `tests/FolderPrint.Tests/Cli/CliRunnerTests.cs`
+- `_bmad-output/implementation-artifacts/1-3-load-an-empty-catalog-and-list-registered-folders.md`
+- `docs/stories/story-004.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+
 ## Change Log
 
+- 2026-07-08: Implemented Story 1.3 empty catalog loading, list dispatch, tests, and BMAD review status update.
 - 2026-07-08: Created implementation-ready Story 1.3 and marked it ready for dev.
+
+
+
+
