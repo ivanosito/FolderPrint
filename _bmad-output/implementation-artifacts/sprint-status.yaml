@@ -35,7 +35,7 @@ development_status:
   1-1-create-solution-and-project-boundaries: done
   1-2-parse-v1-commands-and-define-exit-codes: done
   1-3-load-an-empty-catalog-and-list-registered-folders: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
   epic-2: in-progress
   2-1-implement-domain-models-and-sha-256-hashing: done
   2-2-scan-folders-recursively: backlog
@@ -57,6 +57,7 @@ development_status:
   5-1-implement-duplicatefinder-for-current-snapshots: backlog
   5-2-wire-duplicates-folder-command: backlog
   epic-5-retrospective: optional
+
 
 
 
