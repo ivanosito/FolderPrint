@@ -1,5 +1,5 @@
 ﻿# generated: 2026-07-07
-# last_updated: 2026-07-07
+# last_updated: 2026-07-08
 # project: FolderPrint
 # project_key: NOKEY
 # tracking_system: file-system
@@ -24,7 +24,7 @@
 #   - done: Retrospective has been completed
 
 generated: 2026-07-07
-last_updated: 2026-07-07
+last_updated: 2026-07-08
 project: FolderPrint
 project_key: NOKEY
 tracking_system: file-system
@@ -34,7 +34,7 @@ development_status:
   epic-1: in-progress
   1-1-create-solution-and-project-boundaries: done
   1-2-parse-v1-commands-and-define-exit-codes: done
-  1-3-load-an-empty-catalog-and-list-registered-folders: backlog
+  1-3-load-an-empty-catalog-and-list-registered-folders: ready-for-dev
   epic-1-retrospective: optional
   epic-2: in-progress
   2-1-implement-domain-models-and-sha-256-hashing: done
@@ -57,6 +57,7 @@ development_status:
   5-1-implement-duplicatefinder-for-current-snapshots: backlog
   5-2-wire-duplicates-folder-command: backlog
   epic-5-retrospective: optional
+
 
 
 
