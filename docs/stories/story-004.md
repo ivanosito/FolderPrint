@@ -2,7 +2,7 @@
 storyId: "1.3"
 storyKey: "1-3-load-an-empty-catalog-and-list-registered-folders"
 title: "Load an Empty Catalog and List Registered Folders"
-status: review
+status: done
 epic: "Epic 1: Runnable CLI Foundation"
 created: 2026-07-08
 updated: 2026-07-08
@@ -22,7 +22,7 @@ previousStories:
 
 # Story 1.3: Load an Empty Catalog and List Registered Folders
 
-Status: review
+Status: done
 
 ## Story
 
@@ -236,6 +236,8 @@ GPT-5 Codex
 
 - 2026-07-08: Implemented Story 1.3 empty catalog loading, list dispatch, tests, and BMAD review status update.
 - 2026-07-08: Created implementation-ready Story 1.3 and marked it ready for dev.
+
+
 
 
 
