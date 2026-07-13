@@ -1,4 +1,4 @@
-﻿using FolderPrint.Core.Catalog;
+using FolderPrint.Core.Catalog;
 using FolderPrint.Core.Models;
 
 namespace FolderPrint.Tests.Catalog;
@@ -22,7 +22,10 @@ public sealed class IntegrityCatalogTests
         Assert.Equal(snapshot.RootPath, registered.RootPath);
         Assert.Equal(created, registered.CreatedAtUtc);
         Assert.Null(registered.LastVerifiedAtUtc);
-        Assert.Same(files, registered.Files);
+        Assert.NotSame(files, registered.Files);
+
+        files[0] = new FileFingerprint("changed.txt", "changed", 1, modified);
+        Assert.Equal("nested\\file.txt", registered.Files[0].RelativePath);
     }
 
     [Fact]

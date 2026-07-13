@@ -2,7 +2,7 @@
 storyId: "2.3"
 storyKey: "2-3-persist-registered-folder-baselines"
 title: "Persist Registered Folder Baselines"
-status: review
+status: done
 epic: "Epic 2: Register Trusted Folder Baselines"
 created: 2026-07-13
 updated: 2026-07-13
@@ -23,7 +23,7 @@ previousStories:
 
 # Story 2.3: Persist Registered Folder Baselines
 
-Status: review
+Status: done
 
 ## Story
 
@@ -157,6 +157,10 @@ Story 1.3 already introduced `IntegrityCatalog`, `CatalogStore.Load()`, injectab
 - [x] Re-run and preserve existing missing-catalog and malformed-JSON tests. (AC: 5, 7, 10)
 - [x] Run validation and confirm no CLI, registration, verification, duplicate, refresh, scanner, dependency, or V2 scope was introduced. (AC: 9, 10)
 
+### Review Findings
+
+- [x] [Review][Patch] Preserve an existing valid catalog when a save fails after opening the destination [`src/FolderPrint.Core/Catalog/CatalogStore.cs`:72]
+- [x] [Review][Patch] Snapshot the file collection when creating a trusted baseline instead of aliasing a caller-mutable list [`src/FolderPrint.Core/Catalog/IntegrityCatalog.cs`:22]
 ## Validation Commands
 
 Run from repository root:
@@ -214,6 +218,8 @@ OpenAI Codex (GPT-5)
 - Existing malformed catalogs are validated before overwrite and remain byte-for-byte unchanged on failure.
 - Added focused tests for baseline mapping, empty file sets, first write, schema names, complete round trip, malformed preservation, and deterministic write failure.
 - No CLI behavior, verification, duplicate detection, refresh, scanner changes, external dependencies, or V2 features were added.
+- Review patch: catalog saves now stage JSON in a sibling temporary file and replace the destination only after serialization succeeds; failed replacement preserves the existing catalog and cleans up the temporary file.
+- Review patch: registered baselines now copy snapshot fingerprints so later caller mutations cannot change trusted catalog state.
 
 ### File List
 
@@ -230,3 +236,4 @@ OpenAI Codex (GPT-5)
 
 - 2026-07-13: Created implementation-ready Story 2.3 as Sprint 002 stretch work after Story 2.2 completion and review.
 - 2026-07-13: Implemented Core baseline persistence and catalog tests; moved story to review after all validations passed.
+- 2026-07-13: Addressed 2 code-review findings, added regression coverage, and marked Story 2.3 done after 44 tests passed.

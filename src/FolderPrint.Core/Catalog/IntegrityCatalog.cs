@@ -1,4 +1,4 @@
-﻿using FolderPrint.Core.Models;
+using FolderPrint.Core.Models;
 
 namespace FolderPrint.Core.Catalog;
 
@@ -19,7 +19,7 @@ public sealed record IntegrityCatalog(IReadOnlyList<RegisteredFolder> Registered
             snapshot.RootPath,
             createdAtUtc,
             null,
-            snapshot.Files);
+            snapshot.Files.ToArray());
 
         return new IntegrityCatalog([.. RegisteredFolders, registeredFolder]);
     }

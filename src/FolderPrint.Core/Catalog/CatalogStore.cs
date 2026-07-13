@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace FolderPrint.Core.Catalog;
 
@@ -61,6 +61,8 @@ public sealed class CatalogStore
             }
         }
 
+        string? temporaryPath = null;
+
         try
         {
             var directory = Path.GetDirectoryName(catalogPath);
@@ -69,8 +71,14 @@ public sealed class CatalogStore
                 Directory.CreateDirectory(directory);
             }
 
-            using var stream = File.Create(catalogPath);
-            JsonSerializer.Serialize(stream, catalog, JsonOptions);
+            temporaryPath = $"{catalogPath}.{Guid.NewGuid():N}.tmp";
+            using (var stream = File.Create(temporaryPath))
+            {
+                JsonSerializer.Serialize(stream, catalog, JsonOptions);
+            }
+
+            File.Move(temporaryPath, catalogPath, overwrite: true);
+            temporaryPath = null;
             return CatalogSaveResult.Success();
         }
         catch (JsonException ex)
@@ -88,6 +96,22 @@ public sealed class CatalogStore
         catch (UnauthorizedAccessException ex)
         {
             return CatalogSaveResult.CatalogError($"Catalog could not be written: {ex.Message}");
+        }
+        finally
+        {
+            if (temporaryPath is not null)
+            {
+                try
+                {
+                    File.Delete(temporaryPath);
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+            }
         }
     }
 

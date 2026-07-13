@@ -165,6 +165,32 @@ public sealed class CatalogStoreTests
     }
 
     [Fact]
+    public void Save_WhenExistingCatalogCannotBeReplaced_PreservesOriginalCatalog()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var catalogPath = Path.Combine(root, "catalog.json");
+            var store = new CatalogStore(catalogPath);
+            var original = new IntegrityCatalog([new RegisteredFolder("original", "C:\\Original", DateTimeOffset.UtcNow, null, [])]);
+            Assert.True(store.Save(original).IsSuccess);
+            var originalBytes = File.ReadAllBytes(catalogPath);
+
+            using var lockStream = new FileStream(catalogPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var replacement = new IntegrityCatalog([new RegisteredFolder("replacement", "C:\\Replacement", DateTimeOffset.UtcNow, null, [])]);
+
+            var result = store.Save(replacement);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(originalBytes, File.ReadAllBytes(catalogPath));
+            Assert.Empty(Directory.GetFiles(root, "*.tmp"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+    [Fact]
     public void Save_WhenParentPathIsAFile_ReturnsTypedFailure()
     {
         var root = CreateTempDirectory();
