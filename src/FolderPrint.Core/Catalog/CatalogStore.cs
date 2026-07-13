@@ -4,7 +4,10 @@ namespace FolderPrint.Core.Catalog;
 
 public sealed class CatalogStore
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true
+    };
 
     private readonly string catalogPath;
 
@@ -41,6 +44,50 @@ public sealed class CatalogStore
         catch (UnauthorizedAccessException ex)
         {
             return CatalogLoadResult.CatalogError($"Catalog could not be read: {ex.Message}");
+        }
+    }
+
+    public CatalogSaveResult Save(IntegrityCatalog catalog)
+    {
+        ArgumentNullException.ThrowIfNull(catalog);
+
+        if (File.Exists(catalogPath))
+        {
+            var existingCatalog = Load();
+            if (!existingCatalog.IsSuccess)
+            {
+                return CatalogSaveResult.CatalogError(
+                    $"Catalog could not be written because the existing catalog is invalid or unreadable: {existingCatalog.ErrorMessage}");
+            }
+        }
+
+        try
+        {
+            var directory = Path.GetDirectoryName(catalogPath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            using var stream = File.Create(catalogPath);
+            JsonSerializer.Serialize(stream, catalog, JsonOptions);
+            return CatalogSaveResult.Success();
+        }
+        catch (JsonException ex)
+        {
+            return CatalogSaveResult.CatalogError($"Catalog could not be serialized: {ex.Message}");
+        }
+        catch (NotSupportedException ex)
+        {
+            return CatalogSaveResult.CatalogError($"Catalog could not be serialized: {ex.Message}");
+        }
+        catch (IOException ex)
+        {
+            return CatalogSaveResult.CatalogError($"Catalog could not be written: {ex.Message}");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return CatalogSaveResult.CatalogError($"Catalog could not be written: {ex.Message}");
         }
     }
 

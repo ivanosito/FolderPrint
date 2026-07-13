@@ -2,7 +2,7 @@
 storyId: "2.3"
 storyKey: "2-3-persist-registered-folder-baselines"
 title: "Persist Registered Folder Baselines"
-status: ready-for-dev
+status: review
 epic: "Epic 2: Register Trusted Folder Baselines"
 created: 2026-07-13
 updated: 2026-07-13
@@ -23,7 +23,7 @@ previousStories:
 
 # Story 2.3: Persist Registered Folder Baselines
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -146,16 +146,16 @@ Story 1.3 already introduced `IntegrityCatalog`, `CatalogStore.Load()`, injectab
 
 ## Tasks
 
-- [ ] Add an immutable/add-only Core operation that maps a completed snapshot plus caller-supplied identity/creation time to a `RegisteredFolder` in `IntegrityCatalog`. (AC: 1, 8, 9)
-- [ ] Extend `CatalogStore` with JSON save behavior using the existing injected path and shared `System.Text.Json` options. (AC: 2-4)
-- [ ] Create missing parent directories and valid `catalog.json` on first successful save. (AC: 2)
-- [ ] Add typed save failure handling for expected path/access/I/O errors. (AC: 6)
-- [ ] Protect existing malformed JSON from overwrite during modification/save flows. (AC: 5, 7)
-- [ ] Add save/load round-trip tests for all registered-folder and fingerprint fields, including `null` and non-null `lastVerifiedAtUtc`, UTC timestamps, nested relative paths, and empty collections. (AC: 3, 8)
-- [ ] Add structural JSON tests for every required camelCase field name. (AC: 4)
-- [ ] Add tests for first-write directory creation and deterministic write failure without real `%AppData%`. (AC: 2, 6)
-- [ ] Re-run and preserve existing missing-catalog and malformed-JSON tests. (AC: 5, 7, 10)
-- [ ] Run validation and confirm no CLI, registration, verification, duplicate, refresh, scanner, dependency, or V2 scope was introduced. (AC: 9, 10)
+- [x] Add an immutable/add-only Core operation that maps a completed snapshot plus caller-supplied identity/creation time to a `RegisteredFolder` in `IntegrityCatalog`. (AC: 1, 8, 9)
+- [x] Extend `CatalogStore` with JSON save behavior using the existing injected path and shared `System.Text.Json` options. (AC: 2-4)
+- [x] Create missing parent directories and valid `catalog.json` on first successful save. (AC: 2)
+- [x] Add typed save failure handling for expected path/access/I/O errors. (AC: 6)
+- [x] Protect existing malformed JSON from overwrite during modification/save flows. (AC: 5, 7)
+- [x] Add save/load round-trip tests for all registered-folder and fingerprint fields, including `null` and non-null `lastVerifiedAtUtc`, UTC timestamps, nested relative paths, and empty collections. (AC: 3, 8)
+- [x] Add structural JSON tests for every required camelCase field name. (AC: 4)
+- [x] Add tests for first-write directory creation and deterministic write failure without real `%AppData%`. (AC: 2, 6)
+- [x] Re-run and preserve existing missing-catalog and malformed-JSON tests. (AC: 5, 7, 10)
+- [x] Run validation and confirm no CLI, registration, verification, duplicate, refresh, scanner, dependency, or V2 scope was introduced. (AC: 9, 10)
 
 ## Validation Commands
 
@@ -192,12 +192,41 @@ Select-String -Path src/**/*.cs,tests/**/*.cs -Pattern 'VerificationService|Dupl
 
 ### Agent Model Used
 
+OpenAI Codex (GPT-5)
+
+### Implementation Plan
+
+- Add an immutable catalog operation that maps an existing `FolderSnapshot` to a `RegisteredFolder` without scanning, hashing, duplicate policy, or CLI orchestration.
+- Extend the existing JSON `CatalogStore` with typed save outcomes, first-write directory creation, shared camelCase serialization options, and malformed-catalog overwrite protection.
+- Drive the implementation with focused catalog tests, then run the complete repository validation suite and scope checks.
+
 ### Debug Log References
+
+- RED: `dotnet test --no-restore` failed to compile because `CatalogStore.Save` and `IntegrityCatalog.AddRegisteredFolder` did not exist.
+- GREEN: focused catalog tests initially exposed two assertion defects (collection instance equality and expected wording), which were corrected before the focused suite passed 9/9.
+- REGRESSION: restore, build, and the complete test suite passed; 43 tests passed with 0 failures.
 
 ### Completion Notes List
 
+- Added immutable add-only baseline creation from caller-supplied identity, creation time, and an existing `FolderSnapshot`; initial verification time remains null.
+- Added human-inspectable camelCase JSON catalog saving with parent-directory creation and full folder/fingerprint round trips.
+- Added typed save results for expected serialization, I/O, and access failures.
+- Existing malformed catalogs are validated before overwrite and remain byte-for-byte unchanged on failure.
+- Added focused tests for baseline mapping, empty file sets, first write, schema names, complete round trip, malformed preservation, and deterministic write failure.
+- No CLI behavior, verification, duplicate detection, refresh, scanner changes, external dependencies, or V2 features were added.
+
 ### File List
+
+- `_bmad-output/implementation-artifacts/2-3-persist-registered-folder-baselines.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `docs/stories/story-006.md`
+- `src/FolderPrint.Core/Catalog/CatalogSaveResult.cs`
+- `src/FolderPrint.Core/Catalog/CatalogStore.cs`
+- `src/FolderPrint.Core/Catalog/IntegrityCatalog.cs`
+- `tests/FolderPrint.Tests/Catalog/CatalogStoreTests.cs`
+- `tests/FolderPrint.Tests/Catalog/IntegrityCatalogTests.cs`
 
 ## Change Log
 
 - 2026-07-13: Created implementation-ready Story 2.3 as Sprint 002 stretch work after Story 2.2 completion and review.
+- 2026-07-13: Implemented Core baseline persistence and catalog tests; moved story to review after all validations passed.
