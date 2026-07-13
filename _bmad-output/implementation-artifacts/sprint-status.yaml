@@ -1,5 +1,5 @@
 ﻿# generated: 2026-07-07
-# last_updated: 2026-07-08
+# last_updated: 2026-07-13
 # project: FolderPrint
 # project_key: NOKEY
 # tracking_system: file-system
@@ -24,7 +24,7 @@
 #   - done: Retrospective has been completed
 
 generated: 2026-07-07
-last_updated: 2026-07-08
+last_updated: 2026-07-13
 project: FolderPrint
 project_key: NOKEY
 tracking_system: file-system
@@ -38,7 +38,7 @@ development_status:
   epic-1-retrospective: done
   epic-2: in-progress
   2-1-implement-domain-models-and-sha-256-hashing: done
-  2-2-scan-folders-recursively: backlog
+  2-2-scan-folders-recursively: ready-for-dev
   2-3-persist-registered-folder-baselines: backlog
   2-4-wire-register-folder-command: backlog
   epic-2-retrospective: optional
