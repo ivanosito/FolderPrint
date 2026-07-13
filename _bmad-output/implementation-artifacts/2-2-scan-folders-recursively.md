@@ -2,7 +2,7 @@
 storyId: "2.2"
 storyKey: "2-2-scan-folders-recursively"
 title: "Scan Folders Recursively"
-status: ready-for-dev
+status: done
 epic: "Epic 2: Register Trusted Folder Baselines"
 created: 2026-07-13
 updated: 2026-07-13
@@ -12,7 +12,7 @@ sprint: "Sprint 002"
 
 # Story 2.2: Scan Folders Recursively
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -98,14 +98,19 @@ Story 2.1 created the exact records and hasher needed here. `FileHasher` intenti
 
 ## Tasks
 
-- [ ] Add `FolderScanner` and its Core API. (AC: 1, 4, 7, 8)
-- [ ] Recursively enumerate files without ignore rules or later-story behavior. (AC: 1, 6)
-- [ ] Reuse `FileHasher` and create fingerprints with relative path, size, and UTC timestamp. (AC: 2, 3)
-- [ ] Translate expected per-file failures into unreadable relative paths and continue. (AC: 5)
-- [ ] Return the existing `FolderSnapshot`. (AC: 1, 4-6)
-- [ ] Test recursion, separators, hashes, sizes, timestamps, empty and invalid roots. (AC: 1-7)
-- [ ] Add a reliable unreadable-file continuation test where supported. (AC: 5)
-- [ ] Run validation and confirm Story 2.3 stays backlog with no later work. (AC: 8, 9)
+- [x] Add `FolderScanner` and its Core API. (AC: 1, 4, 7, 8)
+- [x] Recursively enumerate files without ignore rules or later-story behavior. (AC: 1, 6)
+- [x] Reuse `FileHasher` and create fingerprints with relative path, size, and UTC timestamp. (AC: 2, 3)
+- [x] Translate expected per-file failures into unreadable relative paths and continue. (AC: 5)
+- [x] Return the existing `FolderSnapshot`. (AC: 1, 4-6)
+- [x] Test recursion, separators, hashes, sizes, timestamps, empty and invalid roots. (AC: 1-7)
+- [x] Add a reliable unreadable-file continuation test where supported. (AC: 5)
+- [x] Run validation and confirm Story 2.3 stays backlog with no later work. (AC: 8, 9)
+
+### Review Findings
+
+- [x] [Review][Patch] Synchronize and complete both BMAD story records [_bmad-output/implementation-artifacts/2-2-scan-folders-recursively.md:5]
+- [x] [Review][Patch] Strengthen scanner timing/metadata evidence and make filesystem test cleanup/timestamp assertions robust [tests/FolderPrint.Tests/Scanning/FolderScannerTests.cs:7]
 
 ## Validation Commands
 
@@ -139,12 +144,33 @@ Select-String -Path src/**/*.cs,tests/**/*.cs -Pattern 'VerificationService|Dupl
 
 ### Agent Model Used
 
+GPT-5 Codex
+
 ### Debug Log References
+
+- Red phase scanner tests failed before FolderScanner existed.
+- dotnet restore
+- dotnet build --no-restore
+- dotnet test --no-build --no-restore (36 passed before review patches)
+- Post-review: dotnet restore, dotnet build --no-restore, dotnet test --no-build --no-restore (36 passed)
 
 ### Completion Notes List
 
+- Added Core-only recursive scanning using existing FileHasher.
+- Added root validation, fingerprint metadata, deterministic ordering, and unreadable-file continuation.
+- Added and review-hardened five xUnit tests; Story 2.3 and later workflows remain unimplemented.
+
 ### File List
+
+- src/FolderPrint.Core/Scanning/FolderScanner.cs
+- tests/FolderPrint.Tests/Scanning/FolderScannerTests.cs
+- docs/stories/story-005.md
+- _bmad-output/implementation-artifacts/2-2-scan-folders-recursively.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
 
 ## Change Log
 
 - 2026-07-13: Created implementation-ready Story 2.2 and marked it ready for development.
+- 2026-07-13: Implemented recursive scanning and tests; moved Story 2.2 to review.
+- 2026-07-13: Applied code-review patches to synchronize records and strengthen test evidence.
+- 2026-07-13: Code review approved; Story 2.2 marked done.
