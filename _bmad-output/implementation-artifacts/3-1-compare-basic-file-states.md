@@ -2,7 +2,7 @@
 storyId: "3.1"
 storyKey: "3-1-compare-basic-file-states"
 title: "Compare Basic File States"
-status: review
+status: done
 epic: "Epic 3: Verify Folder Integrity"
 created: 2026-07-14
 updated: 2026-07-14
@@ -23,7 +23,7 @@ previousStories:
 
 # Story 3.1: Compare Basic File States
 
-Status: review
+Status: done
 
 ## Story
 
@@ -252,3 +252,4 @@ OpenAI Codex (GPT-5)
 
 - 2026-07-14: Created implementation-ready Story 3.1 as Sprint 003 gated stretch work after Story 2.4 completed and passed code review; no implementation performed.
 - 2026-07-14: Implemented deterministic basic file-state comparison and focused regression coverage; 79 tests pass; story moved to review.
+- 2026-07-14: Code review approved with no actionable findings; all 79 tests pass; story marked done.
