@@ -42,8 +42,8 @@ development_status:
   2-3-persist-registered-folder-baselines: done
   2-4-wire-register-folder-command: done
   epic-2-retrospective: optional
-  epic-3: backlog
-  3-1-compare-basic-file-states: backlog
+  epic-3: in-progress
+  3-1-compare-basic-file-states: ready-for-dev
   3-2-detect-moved-or-renamed-files: backlog
   3-3-include-duplicate-and-unreadable-findings-in-verification: backlog
   3-4-wire-verify-folder-command-and-reporting: backlog
