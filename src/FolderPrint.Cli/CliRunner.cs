@@ -1,16 +1,20 @@
-﻿using FolderPrint.Core.Catalog;
+using FolderPrint.Core.Catalog;
+using FolderPrint.Core.Registration;
+using FolderPrint.Core.Scanning;
 
 namespace FolderPrint.Cli;
 
 public sealed class CliRunner
 {
     private readonly CatalogStore catalogStore;
+    private readonly RegistrationService registrationService;
     private readonly TextWriter output;
     private readonly TextWriter error;
 
     public CliRunner(CatalogStore? catalogStore = null, TextWriter? output = null, TextWriter? error = null)
     {
         this.catalogStore = catalogStore ?? new CatalogStore(new CatalogPathProvider().GetCatalogPath());
+        registrationService = new RegistrationService(this.catalogStore, new FolderScanner(new FileHasher()));
         this.output = output ?? Console.Out;
         this.error = error ?? Console.Error;
     }
@@ -25,12 +29,38 @@ public sealed class CliRunner
             return result.ExitCode;
         }
 
-        if (result.Command?.Kind == CommandKind.List)
+        return result.Command!.Kind switch
         {
-            return RunList();
+            CommandKind.List => RunList(),
+            CommandKind.Register => RunRegister(result.Command.FolderPath!),
+            _ => result.ExitCode
+        };
+    }
+
+    private int RunRegister(string folderPath)
+    {
+        var result = registrationService.Register(folderPath);
+        if (result.Status == RegistrationStatus.Success)
+        {
+            output.WriteLine($"Registered folder: {result.RootPath}");
+            output.WriteLine($"Files: {result.FileCount}");
+            return ExitCodes.Success;
         }
 
-        return result.ExitCode;
+        error.WriteLine(result.ErrorMessage);
+        foreach (var unreadableFile in result.UnreadableFiles)
+        {
+            error.WriteLine($"Unreadable: {unreadableFile}");
+        }
+
+        return result.Status switch
+        {
+            RegistrationStatus.AlreadyRegistered => ExitCodes.UsageError,
+            RegistrationStatus.InvalidRoot => ExitCodes.NotFound,
+            RegistrationStatus.CatalogError => ExitCodes.CatalogError,
+            RegistrationStatus.ScanError => ExitCodes.ScanError,
+            _ => ExitCodes.UnexpectedError
+        };
     }
 
     private int RunList()

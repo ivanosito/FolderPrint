@@ -2,7 +2,7 @@
 storyId: "2.4"
 storyKey: "2-4-wire-register-folder-command"
 title: "Wire register <folder> Command"
-status: ready-for-dev
+status: review
 epic: "Epic 2: Register Trusted Folder Baselines"
 created: 2026-07-13
 updated: 2026-07-13
@@ -25,7 +25,7 @@ previousStories:
 
 # Story 2.4: Wire `register <folder>` Command
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -81,7 +81,7 @@ The command must remain an adapter over reusable Core behavior. Registration is 
    Given relative, dotted, or trailing-separator spellings of the same local folder, when root identity is established, then FolderPrint uses `Path.GetFullPath`, trims a non-root ending directory separator, and compares registered roots with `StringComparer.OrdinalIgnoreCase`. The normalized absolute root is the value scanned and stored. Symlink, network, and cross-platform equivalence are not inferred.
 
 5. **Duplicate registration is rejected without mutation**  
-   Given the normalized root is already present in the loaded catalog, when registration is attempted again—including an equivalent casing or trailing-separator spelling on Windows—then FolderPrint returns a clear already-registered error and a documented nonzero existing exit code (`ExitCodes.UsageError`), does not scan or save a replacement, and leaves the existing catalog record and bytes unchanged.
+   Given the normalized root is already present in the loaded catalog, when registration is attempted againâ€”including an equivalent casing or trailing-separator spelling on Windowsâ€”then FolderPrint returns a clear already-registered error and a documented nonzero existing exit code (`ExitCodes.UsageError`), does not scan or save a replacement, and leaves the existing catalog record and bytes unchanged.
 
 6. **Invalid roots fail without catalog changes**  
    Given the supplied path does not exist or resolves to a file rather than a directory, when registration runs, then FolderPrint writes a clear error, returns `ExitCodes.NotFound`, emits no success message, and leaves any existing catalog unchanged.
@@ -111,7 +111,7 @@ The command must remain an adapter over reusable Core behavior. Registration is 
 
 - Target .NET 8/C# and platform libraries only. Do not introduce `System.CommandLine`, a DI container, mocking package, database, or other runtime dependency.
 - `CommandParser` already recognizes exactly `register <folder>` and produces `ParsedCommand(CommandKind.Register, FolderPath)`. Preserve it unless a failing test proves a narrow change is required.
-- `CliRunner` currently injects `CatalogStore` and writers and only dispatches `list`. Extend this boundary for `Register`; preserve the existing constructor/list behavior. Add only the smallest scanner/registration seam needed for deterministic tests—manual constructor injection is sufficient.
+- `CliRunner` currently injects `CatalogStore` and writers and only dispatches `list`. Extend this boundary for `Register`; preserve the existing constructor/list behavior. Add only the smallest scanner/registration seam needed for deterministic testsâ€”manual constructor injection is sufficient.
 - Keep reusable policy out of console code. A small Core `RegistrationService`/`RegistrationResult` (or equivalent focused design) may own normalized-root duplicate checks and unreadable all-or-nothing acceptance. It must not reference `ExitCodes`, `TextWriter`, or CLI types.
 - Recommended sequence:
   1. Normalize the requested root with `Path.GetFullPath` and `Path.TrimEndingDirectorySeparator` while preserving a filesystem root.
@@ -200,18 +200,18 @@ The command must remain an adapter over reusable Core behavior. Registration is 
 
 ## Tasks
 
-- [ ] Define a minimal typed Core registration policy/outcome (or equivalent reusable seam) for duplicate-root and unreadable-snapshot rejection, with no CLI dependencies. (AC: 5, 7, 12)
-- [ ] Normalize the Windows V1 root once and use the same normalized absolute value for catalog identity, duplicate comparison, scanning, and persistence. (AC: 3-6)
-- [ ] Extend `CliRunner` to dispatch `CommandKind.Register` while preserving parser and `list` behavior. (AC: 1, 12)
-- [ ] Load the catalog first and map typed load failures to `CatalogError` without scanning or saving. (AC: 9)
-- [ ] Reject an existing normalized root without modifying the catalog. (AC: 5)
-- [ ] Scan only through the existing `FolderScanner`/`FileHasher` path and map invalid roots and expected scan failures to the specified exit codes. (AC: 2, 6, 8)
-- [ ] Reject any snapshot containing unreadable files and report all unreadable paths without adding or saving a baseline. (AC: 7)
-- [ ] Generate stable identity/UTC creation metadata once, add through `IntegrityCatalog.AddRegisteredFolder`, and save once through `CatalogStore.Save`. (AC: 1, 3, 10, 11)
-- [ ] Print concise success only after save succeeds; map duplicate, path, scan, catalog, and usage outcomes through existing `ExitCodes`. (AC: 1, 5-10)
-- [ ] Add focused Core tests for path identity, duplicate registration, unreadable all-or-nothing behavior, and immutable catalog outcomes. (AC: 4, 5, 7, 12)
-- [ ] Add CLI/integration-style tests for nested and empty registration, persisted metadata/fingerprints, invalid roots, duplicate variants, malformed catalog, save failure, and reliable unreadable-file behavior. (AC: 1-13)
-- [ ] Run full validation and confirm Story 3.1+, verification, duplicate-file detection, refresh, new dependencies, and V2 scope remain absent. (AC: 12, 13)
+- [x] Define a minimal typed Core registration policy/outcome (or equivalent reusable seam) for duplicate-root and unreadable-snapshot rejection, with no CLI dependencies. (AC: 5, 7, 12)
+- [x] Normalize the Windows V1 root once and use the same normalized absolute value for catalog identity, duplicate comparison, scanning, and persistence. (AC: 3-6)
+- [x] Extend `CliRunner` to dispatch `CommandKind.Register` while preserving parser and `list` behavior. (AC: 1, 12)
+- [x] Load the catalog first and map typed load failures to `CatalogError` without scanning or saving. (AC: 9)
+- [x] Reject an existing normalized root without modifying the catalog. (AC: 5)
+- [x] Scan only through the existing `FolderScanner`/`FileHasher` path and map invalid roots and expected scan failures to the specified exit codes. (AC: 2, 6, 8)
+- [x] Reject any snapshot containing unreadable files and report all unreadable paths without adding or saving a baseline. (AC: 7)
+- [x] Generate stable identity/UTC creation metadata once, add through `IntegrityCatalog.AddRegisteredFolder`, and save once through `CatalogStore.Save`. (AC: 1, 3, 10, 11)
+- [x] Print concise success only after save succeeds; map duplicate, path, scan, catalog, and usage outcomes through existing `ExitCodes`. (AC: 1, 5-10)
+- [x] Add focused Core tests for path identity, duplicate registration, unreadable all-or-nothing behavior, and immutable catalog outcomes. (AC: 4, 5, 7, 12)
+- [x] Add CLI/integration-style tests for nested and empty registration, persisted metadata/fingerprints, invalid roots, duplicate variants, malformed catalog, save failure, and reliable unreadable-file behavior. (AC: 1-13)
+- [x] Run full validation and confirm Story 3.1+, verification, duplicate-file detection, refresh, new dependencies, and V2 scope remain absent. (AC: 12, 13)
 
 ## Validation Commands
 
@@ -253,12 +253,36 @@ Any smoke check must use a temporary folder and injected catalog path; do not ru
 
 ### Agent Model Used
 
+OpenAI Codex (GPT-5)
+
 ### Debug Log References
+
+- Red phase: `dotnet test --no-restore --filter "FullyQualifiedName~RegistrationServiceTests|FullyQualifiedName~CliRunnerTests.Run_Register"` failed because the Core registration types did not yet exist.
+- Focused registration/CLI smoke validation: 14 tests passed using temporary folders and injected catalog paths.
+- Full validation: `dotnet restore`, `dotnet build --no-restore`, and `dotnet test --no-build --no-restore` passed; 58 tests passed with 0 build warnings and 0 errors.
+- Boundary validation: Core has no project references or package dependencies; excluded-scope scan and `git diff --check` passed.
 
 ### Completion Notes List
 
+- Added a typed Core registration service/result/status contract for deterministic root normalization, catalog-first sequencing, duplicate rejection, scan acceptance, and safe baseline persistence.
+- Reused `FolderScanner`, its existing `FileHasher`, `IntegrityCatalog.AddRegisteredFolder`, and `CatalogStore.Save`; no scanning, hashing, or persistence implementation was duplicated.
+- Wired `CommandKind.Register` through `CliRunner` with existing exit codes and success/error output emitted only after the typed outcome is known.
+- Added Core and CLI/integration tests for nested and empty folders, stable metadata/fingerprints, invalid roots, duplicate path variants, malformed catalogs, save failures, unreadable files, and post-registration `list` behavior.
+- Confirmed Story 3.1 and all excluded verification, duplicate-file detection, refresh, dependency, and V2 scope remain absent.
+
 ### File List
+
+- `_bmad-output/implementation-artifacts/2-4-wire-register-folder-command.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `docs/stories/story-007.md`
+- `src/FolderPrint.Cli/CliRunner.cs`
+- `src/FolderPrint.Core/Registration/RegistrationResult.cs`
+- `src/FolderPrint.Core/Registration/RegistrationService.cs`
+- `src/FolderPrint.Core/Registration/RegistrationStatus.cs`
+- `tests/FolderPrint.Tests/Cli/CliRunnerTests.cs`
+- `tests/FolderPrint.Tests/Registration/RegistrationServiceTests.cs`
 
 ## Change Log
 
 - 2026-07-13: Created implementation-ready Story 2.4 as Sprint 003 committed work; no implementation performed.
+- 2026-07-14: Implemented end-to-end `register <folder>` orchestration, typed Core outcomes, CLI exit/output mapping, and registration regression coverage; moved story to review.
