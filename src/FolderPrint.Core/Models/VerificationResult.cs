@@ -7,5 +7,5 @@ public sealed record VerificationResult(
     IReadOnlyList<IReadOnlyList<string>> DuplicateGroups,
     IReadOnlyList<string> UnreadableFiles)
 {
-    public bool HasDifferences => Changes.Count > 0 || DuplicateGroups.Count > 0 || UnreadableFiles.Count > 0;
+    public bool HasDifferences => Changes.Any(change => change.Type != FileChangeType.Unchanged) || DuplicateGroups.Count > 0 || UnreadableFiles.Count > 0;
 }

@@ -2,11 +2,12 @@
 storyId: "3.1"
 storyKey: "3-1-compare-basic-file-states"
 title: "Compare Basic File States"
-status: ready-for-dev
+status: review
 epic: "Epic 3: Verify Folder Integrity"
 created: 2026-07-14
 updated: 2026-07-14
 sprint: "Sprint 003 gated stretch"
+baseline_commit: "663da58123d9b09ca1530907ab56151fd2c34289"
 source:
   - "../../docs/product-brief.md"
   - "../../docs/prd.md"
@@ -22,7 +23,7 @@ previousStories:
 
 # Story 3.1: Compare Basic File States
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -163,15 +164,15 @@ Story 3.1 is the first, deliberately narrow slice of Epic 3. It adds pure compar
 
 ## Tasks
 
-- [ ] Add the minimal Core `VerificationService` comparison operation using existing `RegisteredFolder`, `FolderSnapshot`, and verification result models. (AC: 1-11)
-- [ ] Index or compare baseline and current readable fingerprints by ordinal relative path without scanning, hashing, catalog access, or input mutation. (AC: 1-7, 9)
-- [ ] Create typed `Unchanged` and `Modified` findings for shared paths using SHA-256 as the sole content-equality authority. (AC: 1-3)
-- [ ] Create typed `Missing` and `New` findings for unmatched paths without attempting moved/renamed reconciliation. (AC: 4-6)
-- [ ] Materialize all changes in deterministic ordinal relative-path order with stable typed path/hash fields. (AC: 3-7, 9)
-- [ ] Return empty duplicate/unreadable collections and keep later-story classifications absent. (AC: 6, 10-11)
-- [ ] Narrowly correct `VerificationResult.HasDifferences` so unchanged-only changes are clean while all non-unchanged/future findings still count. (AC: 8, 11)
-- [ ] Add focused xUnit coverage for every classification, metadata-insensitive hash equality, mixed and empty inputs, ordering, clean/drift semantics, later-scope exclusion, and input immutability. (AC: 1-11)
-- [ ] Run full validation and confirm no CLI, catalog, scanner, registration, moved/renamed, duplicate, unreadable-finding, refresh, dependency, or V2 scope entered the implementation. (AC: 9-11)
+- [x] Add the minimal Core `VerificationService` comparison operation using existing `RegisteredFolder`, `FolderSnapshot`, and verification result models. (AC: 1-11)
+- [x] Index or compare baseline and current readable fingerprints by ordinal relative path without scanning, hashing, catalog access, or input mutation. (AC: 1-7, 9)
+- [x] Create typed `Unchanged` and `Modified` findings for shared paths using SHA-256 as the sole content-equality authority. (AC: 1-3)
+- [x] Create typed `Missing` and `New` findings for unmatched paths without attempting moved/renamed reconciliation. (AC: 4-6)
+- [x] Materialize all changes in deterministic ordinal relative-path order with stable typed path/hash fields. (AC: 3-7, 9)
+- [x] Return empty duplicate/unreadable collections and keep later-story classifications absent. (AC: 6, 10-11)
+- [x] Narrowly correct `VerificationResult.HasDifferences` so unchanged-only changes are clean while all non-unchanged/future findings still count. (AC: 8, 11)
+- [x] Add focused xUnit coverage for every classification, metadata-insensitive hash equality, mixed and empty inputs, ordering, clean/drift semantics, later-scope exclusion, and input immutability. (AC: 1-11)
+- [x] Run full validation and confirm no CLI, catalog, scanner, registration, moved/renamed, duplicate, unreadable-finding, refresh, dependency, or V2 scope entered the implementation. (AC: 9-11)
 
 ## Validation Commands
 
@@ -212,12 +213,42 @@ git diff -- src/FolderPrint.Cli src/FolderPrint.Core/Catalog src/FolderPrint.Cor
 
 ### Agent Model Used
 
+OpenAI Codex (GPT-5)
+
+### Implementation Plan
+
+- Add focused failing xUnit tests for the four basic classifications, hash-authoritative metadata behavior, deterministic ordering, clean/drift semantics, scope exclusions, and input immutability.
+- Implement a pure Core `VerificationService` using an ordinal merge over independently sorted copies of the baseline and current fingerprint collections.
+- Narrow `VerificationResult.HasDifferences` so `Unchanged` entries remain clean while all non-unchanged and future finding collections remain differences.
+- Run focused and full regression validation plus dependency and excluded-scope checks.
+
 ### Debug Log References
+
+- Red phase: `dotnet test --no-restore --filter "FullyQualifiedName~VerificationServiceTests"` failed with CS0234 because `FolderPrint.Core.Verification` did not exist.
+- Focused green phase: comparison and domain-model tests passed (20 tests).
+- Full validation: restore, build, and all 79 tests passed; build completed with 0 warnings and 0 errors.
+- Boundary validation: Core has no project references or package dependencies; excluded CLI/catalog/scanner/registration diff was empty; `git diff --check` passed.
 
 ### Completion Notes List
 
+- Added a pure Core comparison service that classifies every readable path as `Unchanged`, `Modified`, `Missing`, or `New` using ordinal path and SHA-256 equality.
+- Used an independently sorted two-pointer merge for deterministic output without mutating or aliasing caller-owned collections.
+- Kept same-hash files at different paths as separate `Missing` and `New` findings; no moved/renamed, duplicate, or unreadable verification behavior was added.
+- Returned empty duplicate and unreadable result collections and left all CLI, scanner, catalog, registration, refresh, and later-story boundaries unchanged.
+- Corrected `HasDifferences` so unchanged-only results are clean while modified/missing/new and future duplicate/unreadable collections remain differences.
+- Added focused coverage for all acceptance criteria and confirmed the complete 79-test suite passes.
+
 ### File List
+
+- `_bmad-output/implementation-artifacts/3-1-compare-basic-file-states.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `docs/stories/story-008.md`
+- `src/FolderPrint.Core/Models/VerificationResult.cs`
+- `src/FolderPrint.Core/Verification/VerificationService.cs`
+- `tests/FolderPrint.Tests/Models/DomainModelTests.cs`
+- `tests/FolderPrint.Tests/Verification/VerificationServiceTests.cs`
 
 ## Change Log
 
 - 2026-07-14: Created implementation-ready Story 3.1 as Sprint 003 gated stretch work after Story 2.4 completed and passed code review; no implementation performed.
+- 2026-07-14: Implemented deterministic basic file-state comparison and focused regression coverage; 79 tests pass; story moved to review.

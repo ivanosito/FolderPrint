@@ -89,6 +89,28 @@ public sealed class DomainModelTests
     }
 
     [Fact]
+    public void VerificationResult_WhenOnlyUnchangedFindingsExist_HasNoDifferences()
+    {
+        var verified = new DateTimeOffset(2026, 7, 7, 12, 0, 0, TimeSpan.Zero);
+        var changes = new[] { new FileChange(FileChangeType.Unchanged, "a.txt", "a.txt", "hash", "Unchanged") };
+        var result = new VerificationResult("C:\\Data", verified, changes, [], []);
+
+        Assert.False(result.HasDifferences);
+    }
+
+    [Fact]
+    public void VerificationResult_WhenFutureFindingCollectionsExist_HasDifferences()
+    {
+        var verified = new DateTimeOffset(2026, 7, 7, 12, 0, 0, TimeSpan.Zero);
+
+        var duplicates = new VerificationResult("C:\\Data", verified, [], [["a.txt", "b.txt"]], []);
+        var unreadable = new VerificationResult("C:\\Data", verified, [], [], ["locked.txt"]);
+
+        Assert.True(duplicates.HasDifferences);
+        Assert.True(unreadable.HasDifferences);
+    }
+
+    [Fact]
     public void FileChangeType_WhenInspected_ContainsV1Values()
     {
         var names = Enum.GetNames<FileChangeType>();
