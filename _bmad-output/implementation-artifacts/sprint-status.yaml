@@ -40,7 +40,7 @@ development_status:
   2-1-implement-domain-models-and-sha-256-hashing: done
   2-2-scan-folders-recursively: done
   2-3-persist-registered-folder-baselines: done
-  2-4-wire-register-folder-command: backlog
+  2-4-wire-register-folder-command: ready-for-dev
   epic-2-retrospective: optional
   epic-3: backlog
   3-1-compare-basic-file-states: backlog
