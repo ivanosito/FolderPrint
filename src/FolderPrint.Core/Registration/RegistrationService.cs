@@ -1,4 +1,5 @@
 using FolderPrint.Core.Catalog;
+using FolderPrint.Core.Models;
 using FolderPrint.Core.Scanning;
 
 namespace FolderPrint.Core.Registration;
@@ -6,7 +7,7 @@ namespace FolderPrint.Core.Registration;
 public sealed class RegistrationService
 {
     private readonly CatalogStore catalogStore;
-    private readonly FolderScanner folderScanner;
+    private readonly Func<string, FolderSnapshot> scanFolder;
     private readonly Func<string> idFactory;
     private readonly Func<DateTimeOffset> utcNow;
 
@@ -15,9 +16,18 @@ public sealed class RegistrationService
         FolderScanner folderScanner,
         Func<string>? idFactory = null,
         Func<DateTimeOffset>? utcNow = null)
+        : this(catalogStore, (folderScanner ?? throw new ArgumentNullException(nameof(folderScanner))).Scan, idFactory, utcNow)
+    {
+    }
+
+    public RegistrationService(
+        CatalogStore catalogStore,
+        Func<string, FolderSnapshot> scanFolder,
+        Func<string>? idFactory = null,
+        Func<DateTimeOffset>? utcNow = null)
     {
         this.catalogStore = catalogStore ?? throw new ArgumentNullException(nameof(catalogStore));
-        this.folderScanner = folderScanner ?? throw new ArgumentNullException(nameof(folderScanner));
+        this.scanFolder = scanFolder ?? throw new ArgumentNullException(nameof(scanFolder));
         this.idFactory = idFactory ?? (() => Guid.NewGuid().ToString("N"));
         this.utcNow = utcNow ?? (() => DateTimeOffset.UtcNow);
     }
@@ -49,6 +59,14 @@ public sealed class RegistrationService
         var catalog = loadResult.Catalog!;
         foreach (var registeredFolder in catalog.RegisteredFolders)
         {
+            if (registeredFolder is null)
+            {
+                return RegistrationResult.Failure(
+                    RegistrationStatus.CatalogError,
+                    normalizedRootPath,
+                    "Catalog contains a null registered folder entry.");
+            }
+
             string registeredRootPath;
             try
             {
@@ -71,32 +89,67 @@ public sealed class RegistrationService
             }
         }
 
-        if (!Directory.Exists(normalizedRootPath))
-        {
-            return RegistrationResult.Failure(
-                RegistrationStatus.InvalidRoot,
-                normalizedRootPath,
-                $"Folder was not found or is not a directory: {normalizedRootPath}");
-        }
-
-        FolderPrint.Core.Models.FolderSnapshot snapshot;
+        string normalizedCatalogPath;
         try
         {
-            snapshot = folderScanner.Scan(normalizedRootPath);
+            normalizedCatalogPath = Path.GetFullPath(catalogStore.CatalogPath);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return RegistrationResult.Failure(
+                RegistrationStatus.CatalogError,
+                normalizedRootPath,
+                $"Catalog path is invalid: {ex.Message}");
+        }
+
+        if (IsPathInsideRoot(normalizedCatalogPath, normalizedRootPath))
+        {
+            return RegistrationResult.Failure(
+                RegistrationStatus.CatalogInsideRoot,
+                normalizedRootPath,
+                "The folder cannot be registered because it contains the active FolderPrint catalog.");
+        }
+
+        try
+        {
+            var attributes = File.GetAttributes(normalizedRootPath);
+            if ((attributes & FileAttributes.Directory) == 0)
+            {
+                return RegistrationResult.Failure(
+                    RegistrationStatus.InvalidRoot,
+                    normalizedRootPath,
+                    $"Folder was not found or is not a directory: {normalizedRootPath}");
+            }
+        }
+        catch (FileNotFoundException)
+        {
+            return InvalidRoot(normalizedRootPath);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return InvalidRoot(normalizedRootPath);
         }
         catch (IOException ex)
         {
-            return RegistrationResult.Failure(
-                RegistrationStatus.ScanError,
-                normalizedRootPath,
-                $"Folder scan failed: {ex.Message}");
+            return ScanFailure(normalizedRootPath, ex);
         }
         catch (UnauthorizedAccessException ex)
         {
-            return RegistrationResult.Failure(
-                RegistrationStatus.ScanError,
-                normalizedRootPath,
-                $"Folder scan failed: {ex.Message}");
+            return ScanFailure(normalizedRootPath, ex);
+        }
+
+        FolderSnapshot snapshot;
+        try
+        {
+            snapshot = scanFolder(normalizedRootPath);
+        }
+        catch (IOException ex)
+        {
+            return ScanFailure(normalizedRootPath, ex);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return ScanFailure(normalizedRootPath, ex);
         }
 
         if (snapshot.UnreadableFiles.Count > 0)
@@ -129,4 +182,24 @@ public sealed class RegistrationService
         ArgumentException.ThrowIfNullOrWhiteSpace(rootPath);
         return Path.TrimEndingDirectorySeparator(Path.GetFullPath(rootPath));
     }
+
+    private static bool IsPathInsideRoot(string path, string rootPath)
+    {
+        var rootWithSeparator = Path.EndsInDirectorySeparator(rootPath)
+            ? rootPath
+            : rootPath + Path.DirectorySeparatorChar;
+        return path.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static RegistrationResult InvalidRoot(string normalizedRootPath) =>
+        RegistrationResult.Failure(
+            RegistrationStatus.InvalidRoot,
+            normalizedRootPath,
+            $"Folder was not found or is not a directory: {normalizedRootPath}");
+
+    private static RegistrationResult ScanFailure(string normalizedRootPath, Exception exception) =>
+        RegistrationResult.Failure(
+            RegistrationStatus.ScanError,
+            normalizedRootPath,
+            $"Folder scan failed: {exception.Message}");
 }

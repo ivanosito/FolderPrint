@@ -55,7 +55,7 @@ public sealed class CliRunner
 
         return result.Status switch
         {
-            RegistrationStatus.AlreadyRegistered => ExitCodes.UsageError,
+            RegistrationStatus.AlreadyRegistered or RegistrationStatus.CatalogInsideRoot => ExitCodes.UsageError,
             RegistrationStatus.InvalidRoot => ExitCodes.NotFound,
             RegistrationStatus.CatalogError => ExitCodes.CatalogError,
             RegistrationStatus.ScanError => ExitCodes.ScanError,

@@ -16,6 +16,8 @@ public sealed class CatalogStore
         this.catalogPath = catalogPath;
     }
 
+    public string CatalogPath => catalogPath;
+
     public CatalogLoadResult Load()
     {
         if (!File.Exists(catalogPath))

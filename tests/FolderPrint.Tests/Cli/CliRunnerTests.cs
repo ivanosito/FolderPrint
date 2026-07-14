@@ -79,6 +79,20 @@ public sealed class CliRunnerTests
     }
 
     [Fact]
+    public void Run_RegisterFileRoot_ReturnsNotFoundWithoutCatalogMutation()
+    {
+        using var fixture = new RegistrationFixture();
+        var filePath = Path.Combine(fixture.RootPath, "file.txt");
+        File.WriteAllText(filePath, "content");
+
+        var exitCode = fixture.Runner.Run(new[] { "register", filePath });
+
+        Assert.Equal(ExitCodes.NotFound, exitCode);
+        Assert.Equal(string.Empty, fixture.Output.ToString());
+        Assert.Contains("not a directory", fixture.Error.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.False(File.Exists(fixture.CatalogPath));
+    }
+    [Fact]
     public void Run_RegisterDuplicate_ReturnsUsageErrorAndListStillWorks()
     {
         using var fixture = new RegistrationFixture();
@@ -94,6 +108,30 @@ public sealed class CliRunnerTests
         Assert.Contains(Path.GetFullPath(fixture.RootPath), fixture.Output.ToString());
     }
 
+    [Fact]
+    public void Run_RegisterWhenCatalogIsInsideRoot_ReturnsUsageErrorWithoutScanning()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"FolderPrint-Cli-Overlap-{Guid.NewGuid():N}");
+        var root = Directory.CreateDirectory(Path.Combine(tempDirectory, "root")).FullName;
+        var catalogPath = Path.Combine(root, "state", "catalog.json");
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        var runner = new CliRunner(new CatalogStore(catalogPath), output, error);
+
+        try
+        {
+            var exitCode = runner.Run(new[] { "register", root });
+
+            Assert.Equal(ExitCodes.UsageError, exitCode);
+            Assert.Equal(string.Empty, output.ToString());
+            Assert.Contains("catalog", error.ToString(), StringComparison.OrdinalIgnoreCase);
+            Assert.False(File.Exists(catalogPath));
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
     [Fact]
     public void Run_RegisterWithMalformedCatalog_ReturnsCatalogErrorWithoutMutation()
     {

@@ -2,7 +2,7 @@
 storyId: "2.4"
 storyKey: "2-4-wire-register-folder-command"
 title: "Wire register <folder> Command"
-status: review
+status: done
 epic: "Epic 2: Register Trusted Folder Baselines"
 created: 2026-07-13
 updated: 2026-07-13
@@ -25,7 +25,7 @@ previousStories:
 
 # Story 2.4: Wire `register <folder>` Command
 
-Status: review
+Status: done
 
 ## Story
 
@@ -81,7 +81,7 @@ The command must remain an adapter over reusable Core behavior. Registration is 
    Given relative, dotted, or trailing-separator spellings of the same local folder, when root identity is established, then FolderPrint uses `Path.GetFullPath`, trims a non-root ending directory separator, and compares registered roots with `StringComparer.OrdinalIgnoreCase`. The normalized absolute root is the value scanned and stored. Symlink, network, and cross-platform equivalence are not inferred.
 
 5. **Duplicate registration is rejected without mutation**  
-   Given the normalized root is already present in the loaded catalog, when registration is attempted againâ€”including an equivalent casing or trailing-separator spelling on Windowsâ€”then FolderPrint returns a clear already-registered error and a documented nonzero existing exit code (`ExitCodes.UsageError`), does not scan or save a replacement, and leaves the existing catalog record and bytes unchanged.
+   Given the normalized root is already present in the loaded catalog, when registration is attempted againÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âincluding an equivalent casing or trailing-separator spelling on WindowsÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âthen FolderPrint returns a clear already-registered error and a documented nonzero existing exit code (`ExitCodes.UsageError`), does not scan or save a replacement, and leaves the existing catalog record and bytes unchanged.
 
 6. **Invalid roots fail without catalog changes**  
    Given the supplied path does not exist or resolves to a file rather than a directory, when registration runs, then FolderPrint writes a clear error, returns `ExitCodes.NotFound`, emits no success message, and leaves any existing catalog unchanged.
@@ -111,7 +111,7 @@ The command must remain an adapter over reusable Core behavior. Registration is 
 
 - Target .NET 8/C# and platform libraries only. Do not introduce `System.CommandLine`, a DI container, mocking package, database, or other runtime dependency.
 - `CommandParser` already recognizes exactly `register <folder>` and produces `ParsedCommand(CommandKind.Register, FolderPath)`. Preserve it unless a failing test proves a narrow change is required.
-- `CliRunner` currently injects `CatalogStore` and writers and only dispatches `list`. Extend this boundary for `Register`; preserve the existing constructor/list behavior. Add only the smallest scanner/registration seam needed for deterministic testsâ€”manual constructor injection is sufficient.
+- `CliRunner` currently injects `CatalogStore` and writers and only dispatches `list`. Extend this boundary for `Register`; preserve the existing constructor/list behavior. Add only the smallest scanner/registration seam needed for deterministic testsÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âmanual constructor injection is sufficient.
 - Keep reusable policy out of console code. A small Core `RegistrationService`/`RegistrationResult` (or equivalent focused design) may own normalized-root duplicate checks and unreadable all-or-nothing acceptance. It must not reference `ExitCodes`, `TextWriter`, or CLI types.
 - Recommended sequence:
   1. Normalize the requested root with `Path.GetFullPath` and `Path.TrimEndingDirectorySeparator` while preserving a filesystem root.
@@ -213,6 +213,13 @@ The command must remain an adapter over reusable Core behavior. Registration is 
 - [x] Add CLI/integration-style tests for nested and empty registration, persisted metadata/fingerprints, invalid roots, duplicate variants, malformed catalog, save failure, and reliable unreadable-file behavior. (AC: 1-13)
 - [x] Run full validation and confirm Story 3.1+, verification, duplicate-file detection, refresh, new dependencies, and V2 scope remain absent. (AC: 12, 13)
 
+### Review Findings
+
+- [x] [Review][Patch] Reject registration when the active catalog path resides inside the requested root, preventing catalog persistence from invalidating the new baseline [src/FolderPrint.Core/Registration/RegistrationService.cs:82]
+- [x] [Review][Patch] Reject null registered-folder entries as a typed catalog error instead of dereferencing them and crashing [src/FolderPrint.Core/Registration/RegistrationService.cs:50]
+- [x] [Review][Patch] Map access-denied root inspection to `ScanError`; `Directory.Exists` can collapse access errors into `false` and currently reports `NotFound` [src/FolderPrint.Core/Registration/RegistrationService.cs:74]
+- [x] [Review][Patch] Add a deterministic scan seam and tests proving whole-scan I/O/access exceptions map correctly and duplicate/catalog-load failures stop before scanning [src/FolderPrint.Core/Registration/RegistrationService.cs:13]
+- [x] [Review][Patch] Add CLI coverage for the file-as-root `NotFound` path required by AC 6 [tests/FolderPrint.Tests/Cli/CliRunnerTests.cs:68]
 ## Validation Commands
 
 Run from repository root:
@@ -276,6 +283,7 @@ OpenAI Codex (GPT-5)
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - `docs/stories/story-007.md`
 - `src/FolderPrint.Cli/CliRunner.cs`
+- `src/FolderPrint.Core/Catalog/CatalogStore.cs`
 - `src/FolderPrint.Core/Registration/RegistrationResult.cs`
 - `src/FolderPrint.Core/Registration/RegistrationService.cs`
 - `src/FolderPrint.Core/Registration/RegistrationStatus.cs`
@@ -286,3 +294,4 @@ OpenAI Codex (GPT-5)
 
 - 2026-07-13: Created implementation-ready Story 2.4 as Sprint 003 committed work; no implementation performed.
 - 2026-07-14: Implemented end-to-end `register <folder>` orchestration, typed Core outcomes, CLI exit/output mapping, and registration regression coverage; moved story to review.
+- 2026-07-14: Code review completed; resolved catalog-overlap, semantic-catalog, access-error, deterministic scan-seam, and CLI file-root findings; 66 tests pass; story marked done.

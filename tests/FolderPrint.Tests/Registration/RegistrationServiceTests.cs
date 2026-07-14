@@ -133,6 +133,108 @@ public sealed class RegistrationServiceTests : IDisposable
         Assert.False(File.Exists(catalogPath));
     }
 
+    [Fact]
+    public void Register_NullCatalogEntry_ReturnsCatalogErrorAndPreservesBytes()
+    {
+        var root = CreateDirectory("null-entry");
+        var catalogPath = Path.Combine(tempDirectory, "null-entry-catalog.json");
+        File.WriteAllText(catalogPath, "{\"registeredFolders\":[null]}");
+        var original = File.ReadAllBytes(catalogPath);
+
+        var result = CreateService(catalogPath).Register(root);
+
+        Assert.Equal(RegistrationStatus.CatalogError, result.Status);
+        Assert.Equal(original, File.ReadAllBytes(catalogPath));
+    }
+
+    [Fact]
+    public void Register_CatalogInsideRoot_ReturnsConflictWithoutScanningOrSaving()
+    {
+        var root = CreateDirectory("catalog-overlap");
+        var catalogPath = Path.Combine(root, "state", "catalog.json");
+        var scanCalls = 0;
+        var service = new RegistrationService(new CatalogStore(catalogPath), path =>
+        {
+            scanCalls++;
+            throw new InvalidOperationException("Scanner must not run.");
+        });
+
+        var result = service.Register(root);
+
+        Assert.Equal(RegistrationStatus.CatalogInsideRoot, result.Status);
+        Assert.Equal(0, scanCalls);
+        Assert.False(File.Exists(catalogPath));
+    }
+
+    [Fact]
+    public void Register_DuplicateRoot_DoesNotScan()
+    {
+        var root = CreateDirectory("duplicate-no-scan");
+        var catalogPath = Path.Combine(tempDirectory, "duplicate-no-scan.json");
+        Assert.Equal(RegistrationStatus.Success, CreateService(catalogPath).Register(root).Status);
+        var scanCalls = 0;
+        var service = new RegistrationService(new CatalogStore(catalogPath), path =>
+        {
+            scanCalls++;
+            throw new InvalidOperationException("Scanner must not run.");
+        });
+
+        var result = service.Register(root);
+
+        Assert.Equal(RegistrationStatus.AlreadyRegistered, result.Status);
+        Assert.Equal(0, scanCalls);
+    }
+
+    [Fact]
+    public void Register_CatalogLoadFailure_DoesNotScan()
+    {
+        var root = CreateDirectory("load-no-scan");
+        var catalogPath = Path.Combine(tempDirectory, "load-no-scan.json");
+        File.WriteAllText(catalogPath, "malformed");
+        var scanCalls = 0;
+        var service = new RegistrationService(new CatalogStore(catalogPath), path =>
+        {
+            scanCalls++;
+            throw new InvalidOperationException("Scanner must not run.");
+        });
+
+        var result = service.Register(root);
+
+        Assert.Equal(RegistrationStatus.CatalogError, result.Status);
+        Assert.Equal(0, scanCalls);
+    }
+
+    [Fact]
+    public void Register_WholeScanIOException_ReturnsScanErrorWithoutCatalog()
+    {
+        var root = CreateDirectory("scan-io");
+        var catalogPath = Path.Combine(tempDirectory, "scan-io.json");
+        var service = new RegistrationService(
+            new CatalogStore(catalogPath),
+            path => throw new IOException("enumeration failed"));
+
+        var result = service.Register(root);
+
+        Assert.Equal(RegistrationStatus.ScanError, result.Status);
+        Assert.Contains("enumeration failed", result.ErrorMessage);
+        Assert.False(File.Exists(catalogPath));
+    }
+
+    [Fact]
+    public void Register_WholeScanUnauthorizedAccess_ReturnsScanErrorWithoutCatalog()
+    {
+        var root = CreateDirectory("scan-access");
+        var catalogPath = Path.Combine(tempDirectory, "scan-access.json");
+        var service = new RegistrationService(
+            new CatalogStore(catalogPath),
+            path => throw new UnauthorizedAccessException("access denied"));
+
+        var result = service.Register(root);
+
+        Assert.Equal(RegistrationStatus.ScanError, result.Status);
+        Assert.Contains("access denied", result.ErrorMessage);
+        Assert.False(File.Exists(catalogPath));
+    }
     private RegistrationService CreateService(string catalogPath, Func<string>? idFactory = null, Func<DateTimeOffset>? clock = null) =>
         new(new CatalogStore(catalogPath), new FolderScanner(new FileHasher()), idFactory, clock);
 
