@@ -1,5 +1,5 @@
 # generated: 2026-07-07
-# last_updated: 2026-07-14
+# last_updated: 2026-07-15
 # project: FolderPrint
 # project_key: NOKEY
 # tracking_system: file-system
@@ -24,7 +24,7 @@
 #   - done: Retrospective has been completed
 
 generated: 2026-07-07
-last_updated: 2026-07-14
+last_updated: 2026-07-15
 project: FolderPrint
 project_key: NOKEY
 tracking_system: file-system
@@ -46,7 +46,7 @@ development_status:
   3-1-compare-basic-file-states: done
   3-2-detect-moved-or-renamed-files: done
   3-3-include-duplicate-and-unreadable-findings-in-verification: done
-  3-4-wire-verify-folder-command-and-reporting: backlog
+  3-4-wire-verify-folder-command-and-reporting: ready-for-dev
   epic-3-retrospective: optional
   epic-4: backlog
   4-1-display-registered-folder-metadata: backlog
