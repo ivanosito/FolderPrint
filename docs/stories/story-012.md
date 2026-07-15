@@ -2,7 +2,7 @@
 storyId: "4.1"
 storyKey: "4-1-display-registered-folder-metadata"
 title: "Display Registered Folder Metadata"
-status: ready-for-dev
+status: review
 baseline_commit: f388df856ecc7e5f24a4fd5f84be6c1191900ae6
 epic: "Epic 4: Manage Registered Folders and Baselines"
 created: 2026-07-15
@@ -20,7 +20,7 @@ source:
 
 # Story 4.1: Display Registered Folder Metadata
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -83,30 +83,30 @@ Creating this artifact completes the Epic 3 learning-transfer action for Story 4
 
 ## Tasks / Subtasks
 
-- [ ] Add shared validation needed for safe catalog-wide display. (AC: 5-7)
-  - [ ] Extract or reuse Story 3.4 registration/fingerprint validation so list and verify cannot drift; do not call `RegisteredFolderLookup.Find` with a fabricated path or copy a weaker validation rule.
-  - [ ] Validate all registration entries and detect duplicate normalized registered roots without probing the filesystem.
-  - [ ] Return a typed/explicit validation failure that `CliRunner` can map to `CatalogError`; never throw malformed persisted data into `UnexpectedError`.
-  - [ ] Preserve `CatalogStore.Load` missing-file-as-empty behavior and do not add a save path.
-- [ ] Add deterministic Core metadata formatting. (AC: 1-3, 7)
-  - [ ] Extend `ReportFormatter` with a dedicated registered-folder operation, or add an equivalently narrow type under `FolderPrint.Core/Reporting`; do not format metadata with `Console` in Core.
-  - [ ] Sort independently materialized records by stored root path ordinally, then Id ordinally.
-  - [ ] Render the fixed field contract, invariant UTC `"O"` timestamps, `Never`, and stored baseline count.
-  - [ ] Preserve input collections and avoid culture, timezone, terminal-width, and current-time dependencies.
-- [ ] Wire validated metadata output through the existing list adapter. (AC: 1, 4-8)
-  - [ ] Keep `RunList` sequencing as load -> validate -> format -> write -> `Success`.
-  - [ ] Preserve current missing/empty behavior and expected catalog-error output separation.
-  - [ ] Do not call `Save`, `SaveIfUnchanged`, path normalization for display, root/file APIs, scanner, hasher, or verifier.
-  - [ ] Leave parser, command dispatch, register, and verify behavior unchanged.
-- [ ] Add focused and regression tests. (AC: 1-9)
-  - [ ] Cover one folder with every field, an empty baseline, non-zero timestamp offsets rendered in UTC, and null last verification rendered as `Never`.
-  - [ ] Compare whole formatter output for shuffled multiple-folder inputs and assert input order/objects remain unchanged.
-  - [ ] Cover missing and existing-empty catalogs with the established message and no catalog creation/mutation.
-  - [ ] Cover invalid nested registrations/fingerprints and duplicate normalized registrations as `CatalogError`, stderr-only, with original bytes preserved.
-  - [ ] Use missing registered roots plus throwing/counted injected verification scan/compare delegates to prove list does not inspect, scan, or verify them.
-  - [ ] Compare catalog bytes and loaded metadata before/after successful non-empty list; assert target files, if present, remain unchanged.
-  - [ ] Preserve existing register/list and all Story 3.4 verify regression coverage.
-- [ ] Run full validation and scope checks before marking tasks complete. (AC: 7-9)
+- [x] Add shared validation needed for safe catalog-wide display. (AC: 5-7)
+  - [x] Extract or reuse Story 3.4 registration/fingerprint validation so list and verify cannot drift; do not call `RegisteredFolderLookup.Find` with a fabricated path or copy a weaker validation rule.
+  - [x] Validate all registration entries and detect duplicate normalized registered roots without probing the filesystem.
+  - [x] Return a typed/explicit validation failure that `CliRunner` can map to `CatalogError`; never throw malformed persisted data into `UnexpectedError`.
+  - [x] Preserve `CatalogStore.Load` missing-file-as-empty behavior and do not add a save path.
+- [x] Add deterministic Core metadata formatting. (AC: 1-3, 7)
+  - [x] Extend `ReportFormatter` with a dedicated registered-folder operation, or add an equivalently narrow type under `FolderPrint.Core/Reporting`; do not format metadata with `Console` in Core.
+  - [x] Sort independently materialized records by stored root path ordinally, then Id ordinally.
+  - [x] Render the fixed field contract, invariant UTC `"O"` timestamps, `Never`, and stored baseline count.
+  - [x] Preserve input collections and avoid culture, timezone, terminal-width, and current-time dependencies.
+- [x] Wire validated metadata output through the existing list adapter. (AC: 1, 4-8)
+  - [x] Keep `RunList` sequencing as load -> validate -> format -> write -> `Success`.
+  - [x] Preserve current missing/empty behavior and expected catalog-error output separation.
+  - [x] Do not call `Save`, `SaveIfUnchanged`, path normalization for display, root/file APIs, scanner, hasher, or verifier.
+  - [x] Leave parser, command dispatch, register, and verify behavior unchanged.
+- [x] Add focused and regression tests. (AC: 1-9)
+  - [x] Cover one folder with every field, an empty baseline, non-zero timestamp offsets rendered in UTC, and null last verification rendered as `Never`.
+  - [x] Compare whole formatter output for shuffled multiple-folder inputs and assert input order/objects remain unchanged.
+  - [x] Cover missing and existing-empty catalogs with the established message and no catalog creation/mutation.
+  - [x] Cover invalid nested registrations/fingerprints and duplicate normalized registrations as `CatalogError`, stderr-only, with original bytes preserved.
+  - [x] Use missing registered roots plus throwing/counted injected verification scan/compare delegates to prove list does not inspect, scan, or verify them.
+  - [x] Compare catalog bytes and loaded metadata before/after successful non-empty list; assert target files, if present, remain unchanged.
+  - [x] Preserve existing register/list and all Story 3.4 verify regression coverage.
+- [x] Run full validation and scope checks before marking tasks complete. (AC: 7-9)
 
 ## Dev Notes
 
@@ -114,7 +114,8 @@ Creating this artifact completes the Epic 3 learning-transfer action for Story 4
 
 - `src/FolderPrint.Cli/CliRunner.cs`: `RunList()` already loads through `CatalogStore.Load`, maps load failure to `CatalogError`, preserves the empty message, and writes non-empty output. Update this narrow branch; do not create a new dispatcher or catalog reader.
 - `src/FolderPrint.Core/Catalog/CatalogStore.cs`: missing file returns `IntegrityCatalog.Empty`; malformed JSON and null/missing `registeredFolders` return typed catalog failure. Story 4.1 calls only `Load()`.
-- `src/FolderPrint.Core/Catalog/RegisteredFolderLookup.cs`: contains reviewed validation for registrations, fingerprints, hashes, safe relative paths, and duplicate fingerprint paths, but its validator is private and lookup-specific. Extract/reuse validation rather than duplicating it.
+- `src/FolderPrint.Core/Catalog/RegisteredFolderLookup.cs`
+- `src/FolderPrint.Core/Reporting/ReportFormatter.cs`: contains reviewed validation for registrations, fingerprints, hashes, safe relative paths, and duplicate fingerprint paths, but its validator is private and lookup-specific. Extract/reuse validation rather than duplicating it.
 - `src/FolderPrint.Core/Models/RegisteredFolder.cs`: already exposes every required field; `Files.Count` is the only baseline summary required. No model or schema change is needed.
 - `src/FolderPrint.Core/Reporting/ReportFormatter.cs`: already provides deterministic console-free verification formatting. A dedicated registered-folder formatter operation fits AD-6 without changing verification output.
 - `tests/FolderPrint.Tests/Cli/CliRunnerTests.cs`: existing tests pin missing-catalog, malformed JSON, and register-then-list behavior.
@@ -237,11 +238,47 @@ The excluded-scope scan is an inspection aid because parser symbols/tests may al
 
 GPT-5 Codex
 
+### Implementation Plan
+
+- Extract Story 3.4 persisted registration and fingerprint checks into a shared pure catalog validator, then route lookup and list through it.
+- Add deterministic, console-free registered-folder metadata formatting with complete ordinal ordering and invariant UTC timestamps.
+- Wire the existing `list` branch as load, validate, format, and write without catalog saves or target-folder access.
+- Add focused Core and CLI coverage for deterministic output, malformed persisted state, read-only behavior, and register/verify regressions.
+
 ### Debug Log References
+
+- RED (catalog validation): focused tests failed to compile because CatalogValidator did not exist.
+- GREEN (catalog validation): 22 focused validator and lookup tests passed after extracting shared validation and duplicate normalized-root detection.
+- RED (metadata reporting): focused tests failed to compile because FormatRegisteredFolders did not exist.
+- GREEN (metadata reporting): 7 registered-folder and existing verification formatter tests passed with exact deterministic output and input immutability coverage.
+- RED (CLI list adapter): 3 of 4 focused tests failed because list still printed only paths and accepted malformed semantic catalog data.
+- GREEN (CLI list adapter): 27 list, register/list, and verify tests passed after wiring load, validation, formatting, and writer output without any save or target-root access.
+- Final validation: restore succeeded; Release build succeeded with 0 warnings and 0 errors; all 146 tests passed; the 55-test focused suite, formatting, Core dependency/boundary, excluded-scope, and diff checks passed.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
+- Added a typed, filesystem-independent catalog validator shared by registered-folder lookup and future list display.
+- Catalog validation now rejects malformed registrations, fingerprints, unsafe/duplicate relative paths, invalid roots, and duplicate normalized registrations without modifying catalog state.
+- Added console-free registered-folder metadata reporting with invariant UTC timestamps, Never, stored baseline counts, fixed labels, and root/Id ordinal ordering.
+- Wired non-empty `list` through shared validation and Core formatting while preserving the exact missing/empty message and typed catalog-error output separation.
+- Added read-only regression proof using raw catalog bytes, loaded metadata, target bytes, missing roots, and injected scan/compare delegates that throw if called.
+- Added 15 Story 4.1 test cases, increasing the full regression suite from 131 to 146 without new dependencies or excluded-scope behavior.
 
 ### File List
 
+- `_bmad-output/implementation-artifacts/4-1-display-registered-folder-metadata.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `docs/stories/story-012.md`
+- `src/FolderPrint.Cli/CliRunner.cs`
+- `src/FolderPrint.Core/Catalog/CatalogValidationResult.cs`
+- `src/FolderPrint.Core/Catalog/CatalogValidator.cs`
+- `src/FolderPrint.Core/Catalog/RegisteredFolderLookup.cs`
+- `src/FolderPrint.Core/Reporting/ReportFormatter.cs`
+- `tests/FolderPrint.Tests/Catalog/CatalogValidatorTests.cs`
+- `tests/FolderPrint.Tests/Cli/CliListMetadataTests.cs`
+- `tests/FolderPrint.Tests/Reporting/RegisteredFolderMetadataFormatterTests.cs`
+
+## Change Log
+
+- 2026-07-15: Implemented deterministic read-only registered-folder metadata listing, shared catalog validation, and 15 automated test cases; moved Story 4.1 to review.

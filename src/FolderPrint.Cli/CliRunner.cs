@@ -245,16 +245,23 @@ public sealed class CliRunner
             return ExitCodes.CatalogError;
         }
 
-        if (loadResult.Catalog!.RegisteredFolders.Count == 0)
+        var catalog = loadResult.Catalog!;
+        var validation = CatalogValidator.Validate(catalog);
+        if (!validation.IsSuccess)
+        {
+            error.WriteLine(validation.ErrorMessage);
+            return ExitCodes.CatalogError;
+        }
+
+        if (catalog.RegisteredFolders.Count == 0)
         {
             output.WriteLine("No folders are registered.");
             return ExitCodes.Success;
         }
 
-        output.WriteLine("Registered folders:");
-        foreach (var folder in loadResult.Catalog.RegisteredFolders)
+        foreach (var line in ReportFormatter.FormatRegisteredFolders(catalog.RegisteredFolders))
         {
-            output.WriteLine(folder.RootPath);
+            output.WriteLine(line);
         }
 
         return ExitCodes.Success;

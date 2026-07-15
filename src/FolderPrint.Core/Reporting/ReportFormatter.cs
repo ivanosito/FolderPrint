@@ -1,3 +1,4 @@
+using System.Globalization;
 using FolderPrint.Core.Models;
 
 namespace FolderPrint.Core.Reporting;
@@ -16,6 +17,34 @@ public static class ReportFormatter
 
     private static readonly IComparer<IReadOnlyList<string>> PathSequenceComparer =
         Comparer<IReadOnlyList<string>>.Create(ComparePathSequences);
+
+    public static IReadOnlyList<string> FormatRegisteredFolders(IReadOnlyList<RegisteredFolder> folders)
+    {
+        ArgumentNullException.ThrowIfNull(folders);
+
+        var orderedFolders = folders
+            .OrderBy(folder => folder.RootPath, StringComparer.Ordinal)
+            .ThenBy(folder => folder.Id, StringComparer.Ordinal)
+            .ToArray();
+        var lines = new List<string> { "Registered folders:" };
+
+        for (var index = 0; index < orderedFolders.Length; index++)
+        {
+            var folder = orderedFolders[index];
+            if (index > 0)
+            {
+                lines.Add(string.Empty);
+            }
+
+            lines.Add($"Id: {folder.Id}");
+            lines.Add($"Path: {folder.RootPath}");
+            lines.Add($"Registered: {FormatTimestamp(folder.CreatedAtUtc)}");
+            lines.Add($"Last verified: {(folder.LastVerifiedAtUtc is null ? "Never" : FormatTimestamp(folder.LastVerifiedAtUtc.Value))}");
+            lines.Add($"Baseline files: {folder.Files.Count.ToString(CultureInfo.InvariantCulture)}");
+        }
+
+        return lines.ToArray();
+    }
 
     public static IReadOnlyList<string> FormatVerification(VerificationResult result)
     {
@@ -88,6 +117,9 @@ public static class ReportFormatter
         FileChangeType.Missing => change.BaselineRelativePath ?? string.Empty,
         _ => change.CurrentRelativePath ?? change.BaselineRelativePath ?? string.Empty
     };
+
+    private static string FormatTimestamp(DateTimeOffset value) =>
+        value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
     private static string? EffectivePath(FileChange change) =>
         change.CurrentRelativePath ?? change.BaselineRelativePath;
