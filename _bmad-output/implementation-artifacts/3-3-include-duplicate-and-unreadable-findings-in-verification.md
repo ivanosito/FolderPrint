@@ -3,6 +3,7 @@ storyId: "3.3"
 storyKey: "3-3-include-duplicate-and-unreadable-findings-in-verification"
 title: "Include Duplicate and Unreadable Findings in Verification"
 status: ready-for-dev
+baseline_commit: 48ecc51dbe865673adec7e346242b61bb78564e7
 epic: "Epic 3: Verify Folder Integrity"
 created: 2026-07-14
 updated: 2026-07-14
@@ -12,7 +13,7 @@ previousStory: "3-2-detect-moved-or-renamed-files.md"
 
 # Story 3.3: Include Duplicate and Unreadable Findings in Verification
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -105,11 +106,11 @@ Duplicate grouping and move ambiguity are related but different signals. A repea
 
 ## Tasks
 
-- [ ] Derive independently materialized, deterministic duplicate groups from current readable fingerprints only. (AC: 1-3, 6, 9-10)
-- [ ] Carry independently materialized, ordinally sorted snapshot unreadable entries into the verification result without hashes or change entries. (AC: 4-5, 9-10)
-- [ ] Integrate both collections without changing Story 3.1/3.2 findings, ambiguity, metadata, ordering, or input ownership. (AC: 6-10)
-- [ ] Add focused tests for one/multiple/no duplicate groups, deterministic shuffled inputs, unreadable-only/combined results, ambiguity plus duplicates, exclusion from changes, `HasDifferences`, and immutability. (AC: 1-10)
-- [ ] Run full validation and confirm no CLI, scanner, catalog, refresh, standalone duplicate service, dependency, later-story, or V2 scope entered. (AC: 7-10)
+- [x] Derive independently materialized, deterministic duplicate groups from current readable fingerprints only. (AC: 1-3, 6, 9-10)
+- [x] Carry independently materialized, ordinally sorted snapshot unreadable entries into the verification result without hashes or change entries. (AC: 4-5, 9-10)
+- [x] Integrate both collections without changing Story 3.1/3.2 findings, ambiguity, metadata, ordering, or input ownership. (AC: 6-10)
+- [x] Add focused tests for one/multiple/no duplicate groups, deterministic shuffled inputs, unreadable-only/combined results, ambiguity plus duplicates, exclusion from changes, `HasDifferences`, and immutability. (AC: 1-10)
+- [x] Run full validation and confirm no CLI, scanner, catalog, refresh, standalone duplicate service, dependency, later-story, or V2 scope entered. (AC: 7-10)
 
 ## Validation Commands
 
@@ -145,12 +146,30 @@ git diff -- src/FolderPrint.Cli src/FolderPrint.Core/Catalog src/FolderPrint.Cor
 
 ### Agent Model Used
 
+GPT-5 Codex
+
 ### Debug Log References
+
+- RED: `dotnet test --no-restore --filter "FullyQualifiedName~VerificationServiceTests"` failed 5 of 24 tests because duplicate and unreadable result collections were empty.
+- GREEN: focused verification suite passed 25 of 25 tests after the scoped comparison update.
+- Full validation: restore, build, 93 tests, dependency/boundary scans, and `git diff --check` passed.
 
 ### Completion Notes List
 
+- Derived deterministic duplicate groups from current readable SHA-256 fingerprints only, with ordinal path and group ordering.
+- Carried every current unreadable entry into an independently materialized ordinal result collection without creating `FileChange` entries.
+- Preserved Story 3.2 move/rename ambiguity behavior and existing change ordering.
+- Added regression coverage for one, multiple, and no duplicate groups; duplicate-only and unreadable-only semantics; ambiguity coexistence; deterministic input order; separate findings; and input ownership.
+
 ### File List
+
+- `_bmad-output/implementation-artifacts/3-3-include-duplicate-and-unreadable-findings-in-verification.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `docs/stories/story-010.md`
+- `src/FolderPrint.Core/Verification/VerificationService.cs`
+- `tests/FolderPrint.Tests/Verification/VerificationServiceTests.cs`
 
 ## Change Log
 
 - 2026-07-14: Created implementation-ready Story 3.3 as the eligible Sprint 004 gated stretch story; no implementation performed.
+- 2026-07-14: Implemented duplicate and unreadable verification findings with deterministic materialization and regression tests; moved story to review.

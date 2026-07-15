@@ -215,7 +215,7 @@ public sealed class VerificationServiceTests
     }
 
     [Fact]
-    public void Compare_UnreadablePathsAndRepeatedHashes_DoesNotProduceLaterStoryFindings()
+    public void Compare_RepeatedCurrentHashAndUnreadablePaths_ReturnsSeparateFindings()
     {
         var baseline = Baseline([Fingerprint("a.txt", "shared")]);
         var snapshot = Snapshot(
@@ -225,9 +225,97 @@ public sealed class VerificationServiceTests
         var result = new VerificationService().Compare(baseline, snapshot);
 
         Assert.Equal([FileChangeType.Unchanged, FileChangeType.New], result.Changes.Select(change => change.Type));
-        Assert.Empty(result.DuplicateGroups);
-        Assert.Empty(result.UnreadableFiles);
+        Assert.Equal(["a.txt", "b.txt"], Assert.Single(result.DuplicateGroups));
+        Assert.Equal(["locked.txt"], result.UnreadableFiles);
         Assert.DoesNotContain(result.Changes, change => change.Type is FileChangeType.Duplicate or FileChangeType.Unreadable);
+        Assert.True(result.HasDifferences);
+    }
+
+    [Fact]
+    public void Compare_MultipleDuplicateGroups_ReturnsDeterministicOrdinalGroups()
+    {
+        var files = new List<FileFingerprint>
+        {
+            Fingerprint("z.txt", "hash-1"),
+            Fingerprint("b.txt", "hash-2"),
+            Fingerprint("a.txt", "hash-1"),
+            Fingerprint("c.txt", "hash-2"),
+            Fingerprint("single.txt", "hash-3")
+        };
+
+        var first = Compare([], files);
+        var second = Compare([], files.AsEnumerable().Reverse().ToArray());
+
+        Assert.Collection(
+            first.DuplicateGroups,
+            group => Assert.Equal(["a.txt", "z.txt"], group),
+            group => Assert.Equal(["b.txt", "c.txt"], group));
+        Assert.Equal(
+            first.DuplicateGroups.SelectMany(group => group),
+            second.DuplicateGroups.SelectMany(group => group));
+    }
+
+    [Fact]
+    public void Compare_SingletonHashes_ReturnsNoDuplicateGroups()
+    {
+        var result = Compare([], [Fingerprint("a.txt", "hash-a"), Fingerprint("b.txt", "hash-b")]);
+
+        Assert.Empty(result.DuplicateGroups);
+    }
+
+    [Fact]
+    public void Compare_DuplicateOnly_ReturnsDifferencesWithUnchangedFileChanges()
+    {
+        var files = new[] { Fingerprint("a.txt", "shared"), Fingerprint("b.txt", "shared") };
+
+        var result = Compare(files, files);
+
+        Assert.All(result.Changes, change => Assert.Equal(FileChangeType.Unchanged, change.Type));
+        Assert.Equal(["a.txt", "b.txt"], Assert.Single(result.DuplicateGroups));
+        Assert.Empty(result.UnreadableFiles);
+        Assert.True(result.HasDifferences);
+    }
+
+    [Fact]
+    public void Compare_UnreadableOnly_ReturnsSortedFindingsWithoutFileChanges()
+    {
+        var result = new VerificationService().Compare(Baseline([]), Snapshot([], ["z.locked", "a.locked", "a.locked"]));
+
+        Assert.Empty(result.Changes);
+        Assert.Empty(result.DuplicateGroups);
+        Assert.Equal(["a.locked", "a.locked", "z.locked"], result.UnreadableFiles);
+        Assert.True(result.HasDifferences);
+    }
+
+    [Fact]
+    public void Compare_AmbiguousMoveWithRepeatedCurrentHash_PreservesAmbiguityAndDuplicateGroup()
+    {
+        var result = Compare(
+            [Fingerprint("old-b.txt", "shared"), Fingerprint("old-a.txt", "shared")],
+            [Fingerprint("new-b.txt", "shared"), Fingerprint("new-a.txt", "shared")]);
+
+        Assert.Equal(2, result.Changes.Count(change => change.Type == FileChangeType.Missing));
+        Assert.Equal(2, result.Changes.Count(change => change.Type == FileChangeType.New));
+        Assert.Single(result.Changes, change => change.Type == FileChangeType.AmbiguousMovedOrRenamed);
+        Assert.Equal(["new-a.txt", "new-b.txt"], Assert.Single(result.DuplicateGroups));
+    }
+
+    [Fact]
+    public void Compare_DuplicateAndUnreadableCollections_AreIndependentlyMaterialized()
+    {
+        var currentFiles = new List<FileFingerprint>
+        {
+            Fingerprint("b.txt", "shared"),
+            Fingerprint("a.txt", "shared")
+        };
+        var unreadableFiles = new List<string> { "z.locked", "a.locked" };
+
+        var result = new VerificationService().Compare(Baseline([]), Snapshot(currentFiles, unreadableFiles));
+        currentFiles.Clear();
+        unreadableFiles.Clear();
+
+        Assert.Equal(["a.txt", "b.txt"], Assert.Single(result.DuplicateGroups));
+        Assert.Equal(["a.locked", "z.locked"], result.UnreadableFiles);
     }
 
     private static VerificationResult Compare(

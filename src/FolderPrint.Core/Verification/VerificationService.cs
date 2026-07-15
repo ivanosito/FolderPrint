@@ -62,8 +62,28 @@ public sealed class VerificationService
             .ThenBy(change => change.CurrentRelativePath, StringComparer.Ordinal)
             .ToArray();
 
-        return new VerificationResult(baseline.RootPath, current.ScannedAtUtc, changes, [], []);
+        var duplicateGroups = CreateDuplicateGroups(currentFiles);
+        var unreadableFiles = current.UnreadableFiles.OrderBy(path => path, StringComparer.Ordinal).ToArray();
+
+        return new VerificationResult(baseline.RootPath, current.ScannedAtUtc, changes, duplicateGroups, unreadableFiles);
     }
+
+    private static IReadOnlyList<IReadOnlyList<string>> CreateDuplicateGroups(
+        IReadOnlyList<FileFingerprint> currentFiles) =>
+        currentFiles.GroupBy(file => file.Sha256, StringComparer.Ordinal)
+            .Select(group => new
+            {
+                Hash = group.Key,
+                Paths = group.Select(file => file.RelativePath)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(path => path, StringComparer.Ordinal)
+                    .ToArray()
+            })
+            .Where(group => group.Paths.Length >= 2)
+            .OrderBy(group => group.Paths[0], StringComparer.Ordinal)
+            .ThenBy(group => group.Hash, StringComparer.Ordinal)
+            .Select(group => (IReadOnlyList<string>)group.Paths)
+            .ToArray();
 
     private static IEnumerable<FileChange> ReconcileUnmatched(
         IReadOnlyList<FileFingerprint> baselineFiles,
