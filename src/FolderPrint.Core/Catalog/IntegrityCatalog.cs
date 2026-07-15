@@ -39,4 +39,27 @@ public sealed record IntegrityCatalog(IReadOnlyList<RegisteredFolder> Registered
 
         return new IntegrityCatalog(folders);
     }
+
+    public IntegrityCatalog RemoveRegisteredFolderAt(int registeredFolderIndex)
+    {
+        if (registeredFolderIndex < 0 || registeredFolderIndex >= RegisteredFolders.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(registeredFolderIndex));
+        }
+
+        var folders = new RegisteredFolder[RegisteredFolders.Count - 1];
+        for (int sourceIndex = 0, destinationIndex = 0;
+             sourceIndex < RegisteredFolders.Count;
+             sourceIndex++)
+        {
+            if (sourceIndex == registeredFolderIndex)
+            {
+                continue;
+            }
+
+            folders[destinationIndex++] = RegisteredFolders[sourceIndex];
+        }
+
+        return new IntegrityCatalog(folders);
+    }
 }

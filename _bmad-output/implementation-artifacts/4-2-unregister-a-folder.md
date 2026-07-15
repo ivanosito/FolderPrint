@@ -2,7 +2,7 @@
 storyId: "4.2"
 storyKey: "4-2-unregister-a-folder"
 title: "Unregister a Folder"
-status: ready-for-dev
+status: review
 baseline_commit: d34f419f9a5779afd4ba25ba848cf8e633fb2694
 epic: "Epic 4: Manage Registered Folders and Baselines"
 created: 2026-07-15
@@ -20,7 +20,7 @@ source:
 
 # Story 4.2: Unregister a Folder
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -79,27 +79,27 @@ Refresh, standalone duplicates, `DuplicateFinder`, scan, hash, verify, target-ro
 
 ## Tasks / Subtasks
 
-- [ ] Add immutable removal to `IntegrityCatalog`. (AC: 2-3, 10)
-  - [ ] Remove by validated index into an independent collection with explicit bounds behavior.
-  - [ ] Test first/middle/last/sole removal, source immutability, survivor deep equality/order, duplicate IDs, and invalid indices.
-- [ ] Establish shared guarded mutation in `CatalogStore`. (AC: 7-8, 10)
-  - [ ] Make compare plus replacement one coordinated operation with temp cleanup and neutral errors.
-  - [ ] Route registration through the guard using its initial version; keep verification guarded.
-  - [ ] Test matching/stale/missing-to-created/write failures and deterministic final-check/cross-writer interleavings.
-- [ ] Add typed Core unregistration. (AC: 1-8, 10)
-  - [ ] Sequence normalize/load -> validated lookup -> immutable remove -> guarded save.
-  - [ ] Return typed success/invalid/not-found/catalog-error plus stored root only after saving.
-  - [ ] Never access targets, scan, hash, verify, retry, or call unconditional save.
-- [ ] Wire CLI dispatch and exact output/exit mapping. (AC: 1, 4-6, 9-10)
-  - [ ] Add the missing `CommandKind.Unregister` arm; parser/enum/usage/exit values already exist.
-  - [ ] Withhold success output until save succeeds.
-- [ ] Add safety/regression tests. (AC: 1-10)
-  - [ ] Cover aliases, sibling/prefix/nested non-matches, duplicates, malformed requests/state, and missing/empty catalogs.
-  - [ ] Prove survivor deep preservation and raw-byte preservation on failures.
-  - [ ] Prove missing/file-valued/inaccessible roots cause no target or verification work.
-  - [ ] Cover concurrent add/update/remove, catalog appearance, store failure, no premature output, and no temp residue.
-  - [ ] Catch current silent-success fall-through; prove re-registration and survivor list/verify behavior.
-- [ ] Run all validation and scope checks. (AC: 7-10)
+- [x] Add immutable removal to `IntegrityCatalog`. (AC: 2-3, 10)
+  - [x] Remove by validated index into an independent collection with explicit bounds behavior.
+  - [x] Test first/middle/last/sole removal, source immutability, survivor deep equality/order, duplicate IDs, and invalid indices.
+- [x] Establish shared guarded mutation in `CatalogStore`. (AC: 7-8, 10)
+  - [x] Make compare plus replacement one coordinated operation with temp cleanup and neutral errors.
+  - [x] Route registration through the guard using its initial version; keep verification guarded.
+  - [x] Test matching/stale/missing-to-created/write failures and deterministic final-check/cross-writer interleavings.
+- [x] Add typed Core unregistration. (AC: 1-8, 10)
+  - [x] Sequence normalize/load -> validated lookup -> immutable remove -> guarded save.
+  - [x] Return typed success/invalid/not-found/catalog-error plus stored root only after saving.
+  - [x] Never access targets, scan, hash, verify, retry, or call unconditional save.
+- [x] Wire CLI dispatch and exact output/exit mapping. (AC: 1, 4-6, 9-10)
+  - [x] Add the missing `CommandKind.Unregister` arm; parser/enum/usage/exit values already exist.
+  - [x] Withhold success output until save succeeds.
+- [x] Add safety/regression tests. (AC: 1-10)
+  - [x] Cover aliases, sibling/prefix/nested non-matches, duplicates, malformed requests/state, and missing/empty catalogs.
+  - [x] Prove survivor deep preservation and raw-byte preservation on failures.
+  - [x] Prove missing/file-valued/inaccessible roots cause no target or verification work.
+  - [x] Cover concurrent add/update/remove, catalog appearance, store failure, no premature output, and no temp residue.
+  - [x] Catch current silent-success fall-through; prove re-registration and survivor list/verify behavior.
+- [x] Run all validation and scope checks. (AC: 7-10)
 
 ## Dev Notes
 
@@ -174,22 +174,53 @@ GPT-5 Codex
 
 ### Implementation Plan
 
-- To be completed by dev-story.
+- Add index-based immutable catalog removal and prove source/survivor preservation.
+- Strengthen catalog persistence into one path-scoped guarded compare-and-replace operation, then route registration, verification, and unregister through that shared protocol.
+- Add typed Core unregistration using existing normalization, catalog validation, and lookup seams.
+- Wire deterministic CLI output/exit mapping without target filesystem access.
+- Add focused Core/store/CLI/concurrency tests, then run the full BMAD validation suite.
 
 ### Debug Log References
 
-- To be completed by dev-story.
+- RED (immutable removal): focused tests failed because `IntegrityCatalog.RemoveRegisteredFolderAt` did not exist.
+- GREEN (immutable removal): 9 focused catalog tests passed for first/middle/last/sole removal, bounds, source immutability, and duplicate IDs.
+- RED (guarded mutation): focused tests failed because the coordinated store seam did not exist; registration's stale snapshot test exposed unconditional overwrite behavior.
+- GREEN (guarded mutation): 41 store/register/verify tests passed after atomic guarded replacement, neutral conflict diagnostics, and guarded registration persistence.
+- RED (Core unregister): focused tests failed because typed unregistration service/result/status did not exist.
+- GREEN (Core unregister): 11 tests passed for identity, preservation, malformed/ambiguous state, target independence, and register/verify interleavings.
+- RED (CLI unregister): all 7 tests exposed the existing silent-success fall-through and missing catalog mutation/output mapping.
+- GREEN (CLI unregister): all 7 end-to-end tests passed after explicit dispatch and typed mapping.
+- Final validation: restore succeeded; Release build completed with 0 warnings and 0 errors; 71 focused tests and all 181 tests passed; formatting, dependency, boundary, excluded-scope, and diff checks passed.
 
 ### Completion Notes List
 
-- Ultimate context engine analysis completed - comprehensive developer guide created.
+- Added immutable, index-based registered-folder removal that preserves survivor objects, order, metadata, and baselines.
+- Added one path-scoped mutex around guarded version comparison and same-directory replacement, with durable flush, temp cleanup, typed conflicts, and operation-neutral diagnostics.
+- Converted registration to guarded saving while preserving Story 3.4 verification behavior.
+- Added typed Core unregistration that validates the whole catalog, reuses V1 path identity, removes exactly one match, and never accesses the target root.
+- Wired `unregister <folder>` with exact success output and V1 exit-code mapping; success is withheld until persistence completes.
+- Added 30 Story 4.2 regression cases, increasing the reviewed baseline from 151 to 181 tests without dependencies or excluded-scope features.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/4-2-unregister-a-folder.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - `docs/stories/story-013.md`
+- `src/FolderPrint.Cli/CliRunner.cs`
+- `src/FolderPrint.Core/Catalog/CatalogStore.cs`
+- `src/FolderPrint.Core/Catalog/IntegrityCatalog.cs`
+- `src/FolderPrint.Core/Properties/AssemblyInfo.cs`
+- `src/FolderPrint.Core/Registration/RegistrationService.cs`
+- `src/FolderPrint.Core/Registration/UnregistrationResult.cs`
+- `src/FolderPrint.Core/Registration/UnregistrationService.cs`
+- `src/FolderPrint.Core/Registration/UnregistrationStatus.cs`
+- `tests/FolderPrint.Tests/Catalog/CatalogStoreTests.cs`
+- `tests/FolderPrint.Tests/Catalog/IntegrityCatalogTests.cs`
+- `tests/FolderPrint.Tests/Cli/CliUnregisterTests.cs`
+- `tests/FolderPrint.Tests/Registration/RegistrationServiceTests.cs`
+- `tests/FolderPrint.Tests/Registration/UnregistrationServiceTests.cs`
 
 ## Change Log
 
 - 2026-07-15: Created implementation-ready Story 4.2, defined shared guarded mutation, and moved it to ready-for-dev.
+- 2026-07-15: Implemented conflict-safe unregister, shared guarded persistence, deterministic CLI reporting, and 30 automated tests; moved Story 4.2 to review.

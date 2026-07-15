@@ -11,6 +11,7 @@ public sealed class CliRunner
 {
     private readonly CatalogStore catalogStore;
     private readonly RegistrationService registrationService;
+    private readonly UnregistrationService unregistrationService;
     private readonly Func<string, FolderSnapshot> scanFolderForVerification;
     private readonly Func<RegisteredFolder, FolderSnapshot, VerificationResult> compareFolders;
     private readonly TextWriter output;
@@ -26,6 +27,7 @@ public sealed class CliRunner
         this.catalogStore = catalogStore ?? new CatalogStore(new CatalogPathProvider().GetCatalogPath());
         var folderScanner = new FolderScanner(new FileHasher());
         registrationService = new RegistrationService(this.catalogStore, folderScanner);
+        unregistrationService = new UnregistrationService(this.catalogStore);
         scanFolderForVerification = verificationScan ?? folderScanner.Scan;
         compareFolders = verificationCompare ?? new VerificationService().Compare;
         this.output = output ?? Console.Out;
@@ -48,6 +50,7 @@ public sealed class CliRunner
             {
                 CommandKind.List => RunList(),
                 CommandKind.Register => RunRegister(result.Command.FolderPath!),
+                CommandKind.Unregister => RunUnregister(result.Command.FolderPath!),
                 CommandKind.Verify => RunVerify(result.Command.FolderPath!),
                 _ => result.ExitCode
             };
@@ -232,6 +235,24 @@ public sealed class CliRunner
             RegistrationStatus.InvalidRoot => ExitCodes.NotFound,
             RegistrationStatus.CatalogError => ExitCodes.CatalogError,
             RegistrationStatus.ScanError => ExitCodes.ScanError,
+            _ => ExitCodes.UnexpectedError
+        };
+    }
+
+    private int RunUnregister(string folderPath)
+    {
+        var result = unregistrationService.Unregister(folderPath);
+        if (result.Status == UnregistrationStatus.Success)
+        {
+            output.WriteLine($"Unregistered folder: {result.RootPath}");
+            return ExitCodes.Success;
+        }
+
+        error.WriteLine(result.ErrorMessage);
+        return result.Status switch
+        {
+            UnregistrationStatus.InvalidRoot or UnregistrationStatus.NotFound => ExitCodes.NotFound,
+            UnregistrationStatus.CatalogError => ExitCodes.CatalogError,
             _ => ExitCodes.UnexpectedError
         };
     }

@@ -237,6 +237,127 @@ public sealed class CatalogStoreTests
         }
     }
 
+    [Fact]
+    public void SaveIfUnchanged_MatchingVersion_ReplacesCatalog()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var catalogPath = Path.Combine(root, "catalog.json");
+            var store = new CatalogStore(catalogPath);
+            Assert.True(store.Save(Catalog("original")).IsSuccess);
+            var loaded = store.Load();
+
+            var result = store.SaveIfUnchanged(Catalog("replacement"), loaded.Version);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal("replacement", Assert.Single(store.Load().Catalog!.RegisteredFolders).Id);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SaveIfUnchanged_StaleVersion_PreservesConcurrentCatalogWithNeutralError()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var catalogPath = Path.Combine(root, "catalog.json");
+            var store = new CatalogStore(catalogPath);
+            Assert.True(store.Save(Catalog("original")).IsSuccess);
+            var staleVersion = store.Load().Version;
+            Assert.True(store.Save(Catalog("concurrent")).IsSuccess);
+            var concurrentBytes = File.ReadAllBytes(catalogPath);
+
+            var result = store.SaveIfUnchanged(Catalog("replacement"), staleVersion);
+
+            Assert.False(result.IsSuccess);
+            Assert.Contains("changed", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("verification", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(concurrentBytes, File.ReadAllBytes(catalogPath));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SaveIfUnchanged_CatalogAppearsAfterMissingLoad_PreservesCreatedCatalog()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var catalogPath = Path.Combine(root, "catalog.json");
+            var store = new CatalogStore(catalogPath);
+            var missingVersion = store.Load().Version;
+            Assert.Null(missingVersion);
+            Assert.True(store.Save(Catalog("concurrent")).IsSuccess);
+            var concurrentBytes = File.ReadAllBytes(catalogPath);
+
+            var result = store.SaveIfUnchanged(Catalog("replacement"), missingVersion);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(concurrentBytes, File.ReadAllBytes(catalogPath));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task SaveIfUnchanged_CompetingWriterDuringFinalReplace_CannotOverwriteGuardedMutation()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var catalogPath = Path.Combine(root, "catalog.json");
+            var initialStore = new CatalogStore(catalogPath);
+            Assert.True(initialStore.Save(Catalog("original")).IsSuccess);
+            var version = initialStore.Load().Version;
+            using var atReplace = new ManualResetEventSlim();
+            using var continueReplace = new ManualResetEventSlim();
+            var guardedStore = new CatalogStore(
+                catalogPath,
+                () =>
+                {
+                    atReplace.Set();
+                    Assert.True(continueReplace.Wait(TimeSpan.FromSeconds(10)));
+                });
+
+            var guardedTask = Task.Run(() => guardedStore.SaveIfUnchanged(Catalog("guarded"), version));
+            Assert.True(atReplace.Wait(TimeSpan.FromSeconds(10)));
+            var competingTask = Task.Run(() => new CatalogStore(catalogPath).Save(Catalog("competing")));
+            var competingResult = await competingTask;
+            continueReplace.Set();
+            var guardedResult = await guardedTask;
+
+            Assert.False(competingResult.IsSuccess);
+            Assert.Contains("modified", competingResult.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.True(guardedResult.IsSuccess);
+            Assert.Equal("guarded", Assert.Single(initialStore.Load().Catalog!.RegisteredFolders).Id);
+            Assert.Empty(Directory.GetFiles(root, "*.tmp"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static IntegrityCatalog Catalog(string id) =>
+        new([
+            new RegisteredFolder(
+                id,
+                Path.GetFullPath(Path.Combine(Path.GetTempPath(), id)),
+                new DateTimeOffset(2026, 7, 15, 12, 0, 0, TimeSpan.Zero),
+                null,
+                [])
+        ]);
+
     private static string CreateTempDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), $"folderprint-{Guid.NewGuid():N}");

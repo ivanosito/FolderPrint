@@ -1,4 +1,5 @@
 using FolderPrint.Core.Catalog;
+using FolderPrint.Core.Models;
 using FolderPrint.Core.Registration;
 using FolderPrint.Core.Scanning;
 
@@ -235,6 +236,37 @@ public sealed class RegistrationServiceTests : IDisposable
         Assert.Contains("access denied", result.ErrorMessage);
         Assert.False(File.Exists(catalogPath));
     }
+
+    [Fact]
+    public void Register_CatalogChangesDuringScan_ReturnsCatalogErrorAndPreservesConcurrentCatalog()
+    {
+        var root = CreateDirectory("guarded-registration");
+        var catalogPath = Path.Combine(tempDirectory, "guarded-state", "catalog.json");
+        var store = new CatalogStore(catalogPath);
+        var timestamp = new DateTimeOffset(2026, 7, 15, 12, 0, 0, TimeSpan.Zero);
+        var concurrent = new RegisteredFolder(
+            "concurrent",
+            Path.GetFullPath(Path.Combine(tempDirectory, "other")),
+            timestamp,
+            null,
+            []);
+        var service = new RegistrationService(
+            store,
+            normalizedRoot =>
+            {
+                Assert.True(store.Save(new IntegrityCatalog([concurrent])).IsSuccess);
+                return new FolderSnapshot(normalizedRoot, timestamp, [], []);
+            },
+            () => "new-registration",
+            () => timestamp);
+
+        var result = service.Register(root);
+
+        Assert.Equal(RegistrationStatus.CatalogError, result.Status);
+        Assert.Contains("changed", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("concurrent", Assert.Single(store.Load().Catalog!.RegisteredFolders).Id);
+    }
+
     private RegistrationService CreateService(string catalogPath, Func<string>? idFactory = null, Func<DateTimeOffset>? clock = null) =>
         new(new CatalogStore(catalogPath), new FolderScanner(new FileHasher()), idFactory, clock);
 

@@ -165,7 +165,7 @@ public sealed class RegistrationService
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         var createdAtUtc = utcNow().ToUniversalTime();
         var updatedCatalog = catalog.AddRegisteredFolder(id, snapshot, createdAtUtc);
-        var saveResult = catalogStore.Save(updatedCatalog);
+        var saveResult = catalogStore.SaveIfUnchanged(updatedCatalog, loadResult.Version);
         if (!saveResult.IsSuccess)
         {
             return RegistrationResult.Failure(
