@@ -23,4 +23,20 @@ public sealed record IntegrityCatalog(IReadOnlyList<RegisteredFolder> Registered
 
         return new IntegrityCatalog([.. RegisteredFolders, registeredFolder]);
     }
+
+    public IntegrityCatalog WithLastVerifiedAt(int registeredFolderIndex, DateTimeOffset verifiedAtUtc)
+    {
+        if (registeredFolderIndex < 0 || registeredFolderIndex >= RegisteredFolders.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(registeredFolderIndex));
+        }
+
+        var folders = RegisteredFolders.ToArray();
+        folders[registeredFolderIndex] = folders[registeredFolderIndex] with
+        {
+            LastVerifiedAtUtc = verifiedAtUtc.ToUniversalTime()
+        };
+
+        return new IntegrityCatalog(folders);
+    }
 }

@@ -2,7 +2,7 @@
 storyId: "3.4"
 storyKey: "3-4-wire-verify-folder-command-and-reporting"
 title: "Wire verify <folder> Command and Reporting"
-status: ready-for-dev
+status: review
 baseline_commit: 1302a7285a97fcbeddc0a237c34db26f37d5fe6a
 epic: "Epic 3: Verify Folder Integrity"
 created: 2026-07-15
@@ -13,7 +13,7 @@ previousStory: "3-3-include-duplicate-and-unreadable-findings-in-verification.md
 
 # Story 3.4: Wire `verify <folder>` Command and Reporting
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -89,36 +89,36 @@ The formatter may return a string, lines, or typed display sections, but the con
 
 ## Tasks / Subtasks
 
-- [ ] Add only the reusable Core support needed by CLI orchestration while preserving pure comparison. (AC: 7, 9-10, 12)
-  - [ ] Reuse `RegistrationService.NormalizeRootPath` or extract one shared Core path-identity helper that preserves registration behavior exactly; do not create a second normalization rule.
-  - [ ] Add narrow catalog validation/lookup support if useful, but leave load → lookup → root validation → scan → compare → save → report sequencing at the CLI boundary.
-  - [ ] Treat null registered entries, null `Files`, null fingerprints, or missing/invalid required registration/fingerprint identity fields as `CatalogError` rather than allowing a null-reference/unexpected failure.
-  - [ ] Keep Core support free of CLI exit codes, writers, and command-dispatch concepts.
-- [ ] Add immutable catalog timestamp update behavior. (AC: 1-2, 9-10)
-  - [ ] Replace only the matched `RegisteredFolder` with a copy whose `LastVerifiedAtUtc` is `VerificationResult.VerifiedAtUtc`.
-  - [ ] Preserve registration identity, trusted files, other records, and collection order with independently materialized collections where appropriate.
-  - [ ] Save after comparison and before reporting success; map a failed save to a typed catalog failure.
-  - [ ] Prove clean, ordinary-difference, duplicate-only, and unreadable-only results update the timestamp, while every pre-result/save failure leaves the prior persisted catalog intact.
-- [ ] Add deterministic Core report transformation. (AC: 2-5, 12)
-  - [ ] Create the architecture-anticipated `src/FolderPrint.Core/Reporting/ReportFormatter.cs` or an equivalently explicit console-free reporting type.
-  - [ ] Format all change categories, pathless ambiguity, nested duplicate groups, and repeated unreadable strings according to the Reporting Contract.
-  - [ ] Preserve or defensively impose ordinal ordering without changing typed semantics or modifying input collections.
-  - [ ] Add focused formatter tests for clean, mixed categories, shuffled inputs, null-path ambiguity, nested group boundaries, single-distinct-path duplicate groups, and repeated unreadables.
-- [ ] Wire verification into the existing CLI adapter. (AC: 1-3, 6, 8-13)
-  - [ ] Add `CommandKind.Verify` dispatch to `CliRunner`; do not change the already-correct parser grammar.
-  - [ ] In CLI orchestration, sequence normalized request → catalog load/validation → exactly-one baseline lookup → root validation → one scan → existing `VerificationService.Compare` → timestamp save → formatting/output.
-  - [ ] Add the narrow constructor/service/delegate injection needed for deterministic tests while preserving the current default `Program` composition and existing constructor callers.
-  - [ ] Map malformed filesystem paths, missing roots, and file roots to `NotFound`; map only parser argument-shape failures to `UsageError`; map traversal-wide I/O/access failures after directory validation to `ScanError`.
-  - [ ] Map a clean typed result to `Success`, any `HasDifferences` result to `DifferencesFound`, missing registration/root to `NotFound`, catalog failure to `CatalogError`, and whole-scan failure to `ScanError`.
-  - [ ] Add a concise top-level unexpected-error boundary that returns `UnexpectedError` without swallowing expected typed outcomes.
-  - [ ] Write report lines only after the timestamp save succeeds; write expected failures only to the error writer.
-- [ ] Add CLI/integration and regression coverage. (AC: 1-14)
-  - [ ] Cover unchanged, modified, missing, new, moved/renamed, ambiguity, duplicate-only, unreadable-only, and mixed reporting with exact exit-code assertions.
-  - [ ] Cover trailing separators and path-case identity on Windows, missing registration before scan, missing root, file root, malformed catalog, whole-scan failure, and timestamp-save failure.
-  - [ ] Cover timestamp preservation/update fields for clean and differences results and no mutation on all failure branches.
-  - [ ] Assert meaningful labels, counts, paths, section/group ordering, and output/error separation without brittle whole-output prose snapshots.
-  - [ ] Preserve existing register/list behavior and all Story 3.1–3.3 result tests.
-- [ ] Run full validation and scope checks before marking tasks complete. (AC: 12-14)
+- [x] Add only the reusable Core support needed by CLI orchestration while preserving pure comparison. (AC: 7, 9-10, 12)
+  - [x] Reuse `RegistrationService.NormalizeRootPath` or extract one shared Core path-identity helper that preserves registration behavior exactly; do not create a second normalization rule.
+  - [x] Add narrow catalog validation/lookup support if useful, but leave load → lookup → root validation → scan → compare → save → report sequencing at the CLI boundary.
+  - [x] Treat null registered entries, null `Files`, null fingerprints, or missing/invalid required registration/fingerprint identity fields as `CatalogError` rather than allowing a null-reference/unexpected failure.
+  - [x] Keep Core support free of CLI exit codes, writers, and command-dispatch concepts.
+- [x] Add immutable catalog timestamp update behavior. (AC: 1-2, 9-10)
+  - [x] Replace only the matched `RegisteredFolder` with a copy whose `LastVerifiedAtUtc` is `VerificationResult.VerifiedAtUtc`.
+  - [x] Preserve registration identity, trusted files, other records, and collection order with independently materialized collections where appropriate.
+  - [x] Save after comparison and before reporting success; map a failed save to a typed catalog failure.
+  - [x] Prove clean, ordinary-difference, duplicate-only, and unreadable-only results update the timestamp, while every pre-result/save failure leaves the prior persisted catalog intact.
+- [x] Add deterministic Core report transformation. (AC: 2-5, 12)
+  - [x] Create the architecture-anticipated `src/FolderPrint.Core/Reporting/ReportFormatter.cs` or an equivalently explicit console-free reporting type.
+  - [x] Format all change categories, pathless ambiguity, nested duplicate groups, and repeated unreadable strings according to the Reporting Contract.
+  - [x] Preserve or defensively impose ordinal ordering without changing typed semantics or modifying input collections.
+  - [x] Add focused formatter tests for clean, mixed categories, shuffled inputs, null-path ambiguity, nested group boundaries, single-distinct-path duplicate groups, and repeated unreadables.
+- [x] Wire verification into the existing CLI adapter. (AC: 1-3, 6, 8-13)
+  - [x] Add `CommandKind.Verify` dispatch to `CliRunner`; do not change the already-correct parser grammar.
+  - [x] In CLI orchestration, sequence normalized request → catalog load/validation → exactly-one baseline lookup → root validation → one scan → existing `VerificationService.Compare` → timestamp save → formatting/output.
+  - [x] Add the narrow constructor/service/delegate injection needed for deterministic tests while preserving the current default `Program` composition and existing constructor callers.
+  - [x] Map malformed filesystem paths, missing roots, and file roots to `NotFound`; map only parser argument-shape failures to `UsageError`; map traversal-wide I/O/access failures after directory validation to `ScanError`.
+  - [x] Map a clean typed result to `Success`, any `HasDifferences` result to `DifferencesFound`, missing registration/root to `NotFound`, catalog failure to `CatalogError`, and whole-scan failure to `ScanError`.
+  - [x] Add a concise top-level unexpected-error boundary that returns `UnexpectedError` without swallowing expected typed outcomes.
+  - [x] Write report lines only after the timestamp save succeeds; write expected failures only to the error writer.
+- [x] Add CLI/integration and regression coverage. (AC: 1-14)
+  - [x] Cover unchanged, modified, missing, new, moved/renamed, ambiguity, duplicate-only, unreadable-only, and mixed reporting with exact exit-code assertions.
+  - [x] Cover trailing separators and path-case identity on Windows, missing registration before scan, missing root, file root, malformed catalog, whole-scan failure, and timestamp-save failure.
+  - [x] Cover timestamp preservation/update fields for clean and differences results and no mutation on all failure branches.
+  - [x] Assert meaningful labels, counts, paths, section/group ordering, and output/error separation without brittle whole-output prose snapshots.
+  - [x] Preserve existing register/list behavior and all Story 3.1–3.3 result tests.
+- [x] Run full validation and scope checks before marking tasks complete. (AC: 12-14)
 
 ## Dev Notes
 
@@ -269,19 +269,47 @@ The second scan is an inspection aid because existing parser symbols/tests may m
 
 GPT-5 Codex
 
+### Implementation Plan
+
+- Add shared Core catalog lookup/validation and immutable verification timestamp replacement while keeping command sequencing in CLI.
+- Add deterministic, console-free `ReportFormatter` output for every existing verification result category.
+- Wire `verify <folder>` through `CliRunner` with lookup-before-scan, exact V1 exit mapping, timestamp persistence, and output/error separation.
+- Cover Core behavior, CLI branches, and a real register-to-verify integration flow using red-green-refactor.
+
 ### Debug Log References
+
+- RED (Core): focused tests failed to compile because `FolderPrint.Core.Reporting` and new catalog APIs did not exist.
+- GREEN (Core): 9 focused lookup, timestamp, and formatter tests passed.
+- RED (CLI): focused tests failed because `CliRunner` did not expose verification injection or dispatch.
+- GREEN (CLI): 10 focused CLI tests passed; expanded Story 3.4 suite passed 21 tests including real scanner/catalog integration.
+- Final validation: restore succeeded; build succeeded with 0 warnings/0 errors; all 116 tests passed; formatter, dependency, boundary, scope, and diff checks passed.
 
 ### Completion Notes List
 
-- Ultimate context engine analysis completed - comprehensive developer guide created.
-- No implementation performed; story is ready for `bmad-dev-story`.
+- Added strict registered-folder lookup using the existing normalized, ordinal-ignore-case V1 path identity rule, including malformed catalog and duplicate registration protection.
+- Added immutable `LastVerifiedAtUtc` replacement that preserves folder identity, trusted baseline files, other records, and catalog order.
+- Added deterministic reporting for clean status, all six change categories, pathless ambiguity, nested duplicate groups, and repeated unreadable findings.
+- Wired `verify <folder>` end to end through catalog load, lookup, root validation, one scan, existing comparison, atomic timestamp save, report output, and typed exit-code mapping.
+- Added expected failure handling for invalid/missing/file roots, malformed catalogs, traversal failures, save failures, and unexpected exceptions without false success output.
+- Added 21 Story 3.4 tests; full regression count increased from 95 to 116 with no production dependencies or excluded-scope behavior added.
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/3-4-wire-verify-folder-command-and-reporting.md`
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - `docs/stories/story-011.md`
-
+- `src/FolderPrint.Cli/CliRunner.cs`
+- `src/FolderPrint.Core/Catalog/IntegrityCatalog.cs`
+- `src/FolderPrint.Core/Catalog/RegisteredFolderLookup.cs`
+- `src/FolderPrint.Core/Catalog/RegisteredFolderLookupResult.cs`
+- `src/FolderPrint.Core/Catalog/RegisteredFolderLookupStatus.cs`
+- `src/FolderPrint.Core/Reporting/ReportFormatter.cs`
+- `tests/FolderPrint.Tests/Catalog/IntegrityCatalogVerificationTests.cs`
+- `tests/FolderPrint.Tests/Catalog/RegisteredFolderLookupTests.cs`
+- `tests/FolderPrint.Tests/Cli/CliVerifyIntegrationTests.cs`
+- `tests/FolderPrint.Tests/Cli/CliVerifyTests.cs`
+- `tests/FolderPrint.Tests/Reporting/ReportFormatterTests.cs`
 ## Change Log
 
 - 2026-07-15: Created implementation-ready Story 3.4 as the committed Sprint 005 story; no production code implemented.
+- 2026-07-15: Implemented V1 CLI verification, deterministic reporting, safe timestamp persistence, and 21 automated tests; moved story to review.

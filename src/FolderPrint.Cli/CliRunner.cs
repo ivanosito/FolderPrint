@@ -1,6 +1,9 @@
 using FolderPrint.Core.Catalog;
+using FolderPrint.Core.Models;
 using FolderPrint.Core.Registration;
+using FolderPrint.Core.Reporting;
 using FolderPrint.Core.Scanning;
+using FolderPrint.Core.Verification;
 
 namespace FolderPrint.Cli;
 
@@ -8,13 +11,23 @@ public sealed class CliRunner
 {
     private readonly CatalogStore catalogStore;
     private readonly RegistrationService registrationService;
+    private readonly Func<string, FolderSnapshot> scanFolderForVerification;
+    private readonly Func<RegisteredFolder, FolderSnapshot, VerificationResult> compareFolders;
     private readonly TextWriter output;
     private readonly TextWriter error;
 
-    public CliRunner(CatalogStore? catalogStore = null, TextWriter? output = null, TextWriter? error = null)
+    public CliRunner(
+        CatalogStore? catalogStore = null,
+        TextWriter? output = null,
+        TextWriter? error = null,
+        Func<string, FolderSnapshot>? verificationScan = null,
+        Func<RegisteredFolder, FolderSnapshot, VerificationResult>? verificationCompare = null)
     {
         this.catalogStore = catalogStore ?? new CatalogStore(new CatalogPathProvider().GetCatalogPath());
-        registrationService = new RegistrationService(this.catalogStore, new FolderScanner(new FileHasher()));
+        var folderScanner = new FolderScanner(new FileHasher());
+        registrationService = new RegistrationService(this.catalogStore, folderScanner);
+        scanFolderForVerification = verificationScan ?? folderScanner.Scan;
+        compareFolders = verificationCompare ?? new VerificationService().Compare;
         this.output = output ?? Console.Out;
         this.error = error ?? Console.Error;
     }
@@ -29,12 +42,145 @@ public sealed class CliRunner
             return result.ExitCode;
         }
 
-        return result.Command!.Kind switch
+        try
         {
-            CommandKind.List => RunList(),
-            CommandKind.Register => RunRegister(result.Command.FolderPath!),
-            _ => result.ExitCode
-        };
+            return result.Command!.Kind switch
+            {
+                CommandKind.List => RunList(),
+                CommandKind.Register => RunRegister(result.Command.FolderPath!),
+                CommandKind.Verify => RunVerify(result.Command.FolderPath!),
+                _ => result.ExitCode
+            };
+        }
+        catch
+        {
+            error.WriteLine("Unexpected error.");
+            return ExitCodes.UnexpectedError;
+        }
+    }
+
+    private int RunVerify(string requestedRootPath)
+    {
+        string normalizedRootPath;
+        try
+        {
+            normalizedRootPath = RegistrationService.NormalizeRootPath(requestedRootPath);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            error.WriteLine("Folder path is invalid.");
+            return ExitCodes.NotFound;
+        }
+
+        var loadResult = catalogStore.Load();
+        if (!loadResult.IsSuccess)
+        {
+            error.WriteLine(loadResult.ErrorMessage);
+            return ExitCodes.CatalogError;
+        }
+
+        var lookup = RegisteredFolderLookup.Find(loadResult.Catalog!, normalizedRootPath);
+        if (lookup.Status != RegisteredFolderLookupStatus.Success)
+        {
+            error.WriteLine(lookup.ErrorMessage);
+            return lookup.Status switch
+            {
+                RegisteredFolderLookupStatus.InvalidRoot or RegisteredFolderLookupStatus.NotFound => ExitCodes.NotFound,
+                RegisteredFolderLookupStatus.CatalogError => ExitCodes.CatalogError,
+                _ => ExitCodes.UnexpectedError
+            };
+        }
+
+        var rootValidation = ValidateVerificationRoot(normalizedRootPath);
+        if (rootValidation != ExitCodes.Success)
+        {
+            return rootValidation;
+        }
+
+        FolderSnapshot snapshot;
+        try
+        {
+            snapshot = scanFolderForVerification(normalizedRootPath);
+        }
+        catch (FileNotFoundException)
+        {
+            return WriteRootNotFound(normalizedRootPath);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return WriteRootNotFound(normalizedRootPath);
+        }
+        catch (IOException)
+        {
+            if (File.Exists(normalizedRootPath) || !Directory.Exists(normalizedRootPath))
+            {
+                return WriteRootNotFound(normalizedRootPath);
+            }
+
+            error.WriteLine("Folder scan failed.");
+            return ExitCodes.ScanError;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            error.WriteLine("Folder scan failed.");
+            return ExitCodes.ScanError;
+        }
+
+        var verificationResult = compareFolders(lookup.RegisteredFolder!, snapshot);
+        var updatedCatalog = loadResult.Catalog!.WithLastVerifiedAt(
+            lookup.RegisteredFolderIndex,
+            verificationResult.VerifiedAtUtc);
+        var saveResult = catalogStore.Save(updatedCatalog);
+        if (!saveResult.IsSuccess)
+        {
+            error.WriteLine(saveResult.ErrorMessage);
+            return ExitCodes.CatalogError;
+        }
+
+        foreach (var line in ReportFormatter.FormatVerification(verificationResult))
+        {
+            output.WriteLine(line);
+        }
+
+        return verificationResult.HasDifferences ? ExitCodes.DifferencesFound : ExitCodes.Success;
+    }
+
+    private int ValidateVerificationRoot(string normalizedRootPath)
+    {
+        try
+        {
+            var attributes = File.GetAttributes(normalizedRootPath);
+            if ((attributes & FileAttributes.Directory) == 0)
+            {
+                return WriteRootNotFound(normalizedRootPath);
+            }
+
+            return ExitCodes.Success;
+        }
+        catch (FileNotFoundException)
+        {
+            return WriteRootNotFound(normalizedRootPath);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return WriteRootNotFound(normalizedRootPath);
+        }
+        catch (IOException)
+        {
+            error.WriteLine("Folder scan failed.");
+            return ExitCodes.ScanError;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            error.WriteLine("Folder scan failed.");
+            return ExitCodes.ScanError;
+        }
+    }
+
+    private int WriteRootNotFound(string normalizedRootPath)
+    {
+        error.WriteLine($"Folder was not found or is not a directory: {normalizedRootPath}");
+        return ExitCodes.NotFound;
     }
 
     private int RunRegister(string folderPath)
