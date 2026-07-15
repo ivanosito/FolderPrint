@@ -251,8 +251,32 @@ public sealed class VerificationServiceTests
             group => Assert.Equal(["a.txt", "z.txt"], group),
             group => Assert.Equal(["b.txt", "c.txt"], group));
         Assert.Equal(
-            first.DuplicateGroups.SelectMany(group => group),
-            second.DuplicateGroups.SelectMany(group => group));
+            first.DuplicateGroups.Select(group => group.ToArray()),
+            second.DuplicateGroups.Select(group => group.ToArray()));
+    }
+
+    [Fact]
+    public void Compare_RepeatedFingerprintAtSamePath_QualifiesDuplicateGroupAndEmitsPathOnce()
+    {
+        var result = Compare([], [Fingerprint("same.txt", "shared"), Fingerprint("same.txt", "shared")]);
+
+        Assert.Equal(["same.txt"], Assert.Single(result.DuplicateGroups));
+    }
+
+    [Fact]
+    public void Compare_DuplicateGroupsWithSameFirstPath_UsesFullPathSequenceTieBreaker()
+    {
+        var result = Compare(
+            [],
+            [
+                Fingerprint("a.txt", "hash-z"), Fingerprint("b.txt", "hash-z"),
+                Fingerprint("a.txt", "hash-a"), Fingerprint("z.txt", "hash-a")
+            ]);
+
+        Assert.Collection(
+            result.DuplicateGroups,
+            group => Assert.Equal(["a.txt", "b.txt"], group),
+            group => Assert.Equal(["a.txt", "z.txt"], group));
     }
 
     [Fact]

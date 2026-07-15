@@ -2,7 +2,7 @@
 storyId: "3.3"
 storyKey: "3-3-include-duplicate-and-unreadable-findings-in-verification"
 title: "Include Duplicate and Unreadable Findings in Verification"
-status: ready-for-dev
+status: done
 baseline_commit: 48ecc51dbe865673adec7e346242b61bb78564e7
 epic: "Epic 3: Verify Folder Integrity"
 created: 2026-07-14
@@ -13,7 +13,7 @@ previousStory: "3-2-detect-moved-or-renamed-files.md"
 
 # Story 3.3: Include Duplicate and Unreadable Findings in Verification
 
-Status: review
+Status: done
 
 ## Story
 
@@ -111,6 +111,12 @@ Duplicate grouping and move ambiguity are related but different signals. A repea
 - [x] Integrate both collections without changing Story 3.1/3.2 findings, ambiguity, metadata, ordering, or input ownership. (AC: 6-10)
 - [x] Add focused tests for one/multiple/no duplicate groups, deterministic shuffled inputs, unreadable-only/combined results, ambiguity plus duplicates, exclusion from changes, `HasDifferences`, and immutability. (AC: 1-10)
 - [x] Run full validation and confirm no CLI, scanner, catalog, refresh, standalone duplicate service, dependency, later-story, or V2 scope entered. (AC: 7-10)
+### Review Findings
+
+- [x] [Review][Patch] Qualify duplicate groups by matching fingerprint count before deduplicating emitted paths [src/FolderPrint.Core/Verification/VerificationService.cs:69]
+- [x] [Review][Patch] Use the required full ordinal path-sequence tie-breaker for duplicate-group ordering [src/FolderPrint.Core/Verification/VerificationService.cs:76]
+- [x] [Review][Patch] Compare nested duplicate-group structure in the shuffled-input determinism test [tests/FolderPrint.Tests/Verification/VerificationServiceTests.cs:255]
+- [x] [Review][Patch] Synchronize story frontmatter status with the body and sprint review status [docs/stories/story-010.md:5]
 
 ## Validation Commands
 
@@ -160,6 +166,7 @@ GPT-5 Codex
 - Carried every current unreadable entry into an independently materialized ordinal result collection without creating `FileChange` entries.
 - Preserved Story 3.2 move/rename ambiguity behavior and existing change ordering.
 - Added regression coverage for one, multiple, and no duplicate groups; duplicate-only and unreadable-only semantics; ambiguity coexistence; deterministic input order; separate findings; and input ownership.
+- Review patches qualify groups by fingerprint count, apply full ordinal path-sequence ordering, assert nested deterministic groups, and synchronize BMAD status metadata.
 
 ### File List
 
@@ -173,3 +180,4 @@ GPT-5 Codex
 
 - 2026-07-14: Created implementation-ready Story 3.3 as the eligible Sprint 004 gated stretch story; no implementation performed.
 - 2026-07-14: Implemented duplicate and unreadable verification findings with deterministic materialization and regression tests; moved story to review.
+- 2026-07-14: Addressed all 4 code-review findings; 95 tests pass; story marked done.
