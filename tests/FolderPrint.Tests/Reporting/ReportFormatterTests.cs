@@ -60,6 +60,23 @@ public sealed class ReportFormatterTests
     }
 
     [Fact]
+    public void FormatVerification_EqualHashPathlessAmbiguities_UsesMessageAsFinalTieBreaker()
+    {
+        var first = Result(
+        [
+            Change(FileChangeType.AmbiguousMovedOrRenamed, null, null, "same-hash", "z-message"),
+            Change(FileChangeType.AmbiguousMovedOrRenamed, null, null, "same-hash", "a-message")
+        ]);
+        var reversed = Result(first.Changes.Reverse().ToArray());
+
+        var firstLines = ReportFormatter.FormatVerification(first);
+        var reversedLines = ReportFormatter.FormatVerification(reversed);
+
+        Assert.Equal(firstLines, reversedLines);
+        Assert.True(IndexOf(firstLines, "same-hash | a-message") < IndexOf(firstLines, "same-hash | z-message"));
+    }
+
+    [Fact]
     public void FormatVerification_DuplicateGroups_PreservesNestedBoundariesAndSinglePathGroup()
     {
         var result = Result([], [["z.txt", "a.txt"], ["same.txt"]], []);

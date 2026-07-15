@@ -2,9 +2,10 @@
 
 public sealed class CatalogLoadResult
 {
-    private CatalogLoadResult(IntegrityCatalog? catalog, string? errorMessage)
+    private CatalogLoadResult(IntegrityCatalog? catalog, string? version, string? errorMessage)
     {
         Catalog = catalog;
+        Version = version;
         ErrorMessage = errorMessage;
     }
 
@@ -12,9 +13,11 @@ public sealed class CatalogLoadResult
 
     public IntegrityCatalog? Catalog { get; }
 
+    public string? Version { get; }
+
     public string? ErrorMessage { get; }
 
-    public static CatalogLoadResult Success(IntegrityCatalog catalog) => new(catalog, null);
+    public static CatalogLoadResult Success(IntegrityCatalog catalog, string? version = null) => new(catalog, version, null);
 
-    public static CatalogLoadResult CatalogError(string message) => new(null, message);
+    public static CatalogLoadResult CatalogError(string message) => new(null, null, message);
 }

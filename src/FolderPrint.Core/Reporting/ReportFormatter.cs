@@ -50,6 +50,7 @@ public static class ReportFormatter
                 .ThenBy(change => change.Sha256, StringComparer.Ordinal)
                 .ThenBy(change => change.BaselineRelativePath, StringComparer.Ordinal)
                 .ThenBy(change => change.CurrentRelativePath, StringComparer.Ordinal)
+                .ThenBy(change => change.Message, StringComparer.Ordinal)
                 .ToArray();
 
             if (categoryChanges.Length == 0)

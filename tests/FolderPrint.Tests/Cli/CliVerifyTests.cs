@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using FolderPrint.Cli;
 using FolderPrint.Core.Catalog;
 using FolderPrint.Core.Models;
@@ -175,6 +177,48 @@ public sealed class CliVerifyTests
     }
 
     [Fact]
+    public void Run_VerifyChildDisappearsDuringTraversal_ReturnsScanErrorWhileRootStillExists()
+    {
+        using var fixture = new VerifyFixture([]);
+
+        var exitCode = fixture.Runner(_ => throw new DirectoryNotFoundException("child disappeared"))
+            .Run(["verify", fixture.RootPath]);
+
+        Assert.Equal(ExitCodes.ScanError, exitCode);
+        Assert.Contains("scan", fixture.Error.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Null(Assert.Single(fixture.Store.Load().Catalog!.RegisteredFolders).LastVerifiedAtUtc);
+    }
+
+    [Fact]
+    public void Run_VerifyCatalogChangesAfterLoad_ReturnsCatalogErrorAndPreservesConcurrentChange()
+    {
+        using var fixture = new VerifyFixture([]);
+        var concurrentFolder = new RegisteredFolder(
+            "concurrent-id",
+            Path.Combine(Path.GetDirectoryName(fixture.RootPath)!, "other"),
+            Created,
+            null,
+            []);
+        var runner = fixture.Runner(
+            _ => fixture.Snapshot([]),
+            (baseline, snapshot) =>
+            {
+                Assert.True(fixture.Store.Save(new IntegrityCatalog([baseline, concurrentFolder])).IsSuccess);
+                return new VerificationService().Compare(baseline, snapshot);
+            });
+
+        var exitCode = runner.Run(["verify", fixture.RootPath]);
+
+        Assert.Equal(ExitCodes.CatalogError, exitCode);
+        Assert.Equal(string.Empty, fixture.Output.ToString());
+        Assert.Contains("changed", fixture.Error.ToString(), StringComparison.OrdinalIgnoreCase);
+        var persisted = fixture.Store.Load().Catalog!.RegisteredFolders;
+        Assert.Equal(2, persisted.Count);
+        Assert.Null(persisted[0].LastVerifiedAtUtc);
+        Assert.Equal("concurrent-id", persisted[1].Id);
+    }
+
+    [Fact]
     public void Run_VerifyUnexpectedComparisonFailure_ReturnsUnexpectedErrorWithoutTimestamp()
     {
         using var fixture = new VerifyFixture([]);
@@ -208,7 +252,7 @@ public sealed class CliVerifyTests
     }
 
     private static FileFingerprint Fingerprint(string path, string hash) =>
-        new(path, hash, 1, Created);
+        new(path, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(hash))).ToLowerInvariant(), 1, Created);
 
     private sealed class VerifyFixture : IDisposable
     {

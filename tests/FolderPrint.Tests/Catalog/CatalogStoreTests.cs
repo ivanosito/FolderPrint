@@ -43,6 +43,31 @@ public sealed class CatalogStoreTests
         }
     }
 
+    [Theory]
+    [InlineData("null")]
+    [InlineData("{}")]
+    [InlineData("{\"registeredFolders\":null}")]
+    public void Load_WhenRequiredCatalogStructureIsNullOrMissing_ReturnsCatalogError(string json)
+    {
+        var directory = CreateTempDirectory();
+        try
+        {
+            var catalogPath = Path.Combine(directory, "catalog.json");
+            File.WriteAllText(catalogPath, json);
+
+            var result = new CatalogStore(catalogPath).Load();
+
+            Assert.False(result.IsSuccess);
+            Assert.Null(result.Catalog);
+            Assert.Contains("catalog", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(json, File.ReadAllText(catalogPath));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     [Fact]
     public void Save_WhenParentAndCatalogAreMissing_CreatesValidCatalog()
     {

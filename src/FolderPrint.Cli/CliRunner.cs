@@ -104,21 +104,15 @@ public sealed class CliRunner
         }
         catch (FileNotFoundException)
         {
-            return WriteRootNotFound(normalizedRootPath);
+            return ClassifyScanFailure(normalizedRootPath);
         }
         catch (DirectoryNotFoundException)
         {
-            return WriteRootNotFound(normalizedRootPath);
+            return ClassifyScanFailure(normalizedRootPath);
         }
         catch (IOException)
         {
-            if (File.Exists(normalizedRootPath) || !Directory.Exists(normalizedRootPath))
-            {
-                return WriteRootNotFound(normalizedRootPath);
-            }
-
-            error.WriteLine("Folder scan failed.");
-            return ExitCodes.ScanError;
+            return ClassifyScanFailure(normalizedRootPath);
         }
         catch (UnauthorizedAccessException)
         {
@@ -130,7 +124,7 @@ public sealed class CliRunner
         var updatedCatalog = loadResult.Catalog!.WithLastVerifiedAt(
             lookup.RegisteredFolderIndex,
             verificationResult.VerifiedAtUtc);
-        var saveResult = catalogStore.Save(updatedCatalog);
+        var saveResult = catalogStore.SaveIfUnchanged(updatedCatalog, loadResult.Version);
         if (!saveResult.IsSuccess)
         {
             error.WriteLine(saveResult.ErrorMessage);
@@ -143,6 +137,39 @@ public sealed class CliRunner
         }
 
         return verificationResult.HasDifferences ? ExitCodes.DifferencesFound : ExitCodes.Success;
+    }
+
+    private int ClassifyScanFailure(string normalizedRootPath)
+    {
+        try
+        {
+            var attributes = File.GetAttributes(normalizedRootPath);
+            if ((attributes & FileAttributes.Directory) != 0)
+            {
+                error.WriteLine("Folder scan failed.");
+                return ExitCodes.ScanError;
+            }
+
+            return WriteRootNotFound(normalizedRootPath);
+        }
+        catch (FileNotFoundException)
+        {
+            return WriteRootNotFound(normalizedRootPath);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return WriteRootNotFound(normalizedRootPath);
+        }
+        catch (IOException)
+        {
+            error.WriteLine("Folder scan failed.");
+            return ExitCodes.ScanError;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            error.WriteLine("Folder scan failed.");
+            return ExitCodes.ScanError;
+        }
     }
 
     private int ValidateVerificationRoot(string normalizedRootPath)

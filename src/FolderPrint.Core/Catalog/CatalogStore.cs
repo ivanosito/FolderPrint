@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace FolderPrint.Core.Catalog;
@@ -27,9 +28,14 @@ public sealed class CatalogStore
 
         try
         {
-            using var stream = File.OpenRead(catalogPath);
-            var catalog = JsonSerializer.Deserialize<IntegrityCatalog>(stream, JsonOptions);
-            return CatalogLoadResult.Success(Normalize(catalog));
+            var bytes = File.ReadAllBytes(catalogPath);
+            var catalog = JsonSerializer.Deserialize<IntegrityCatalog>(bytes, JsonOptions);
+            if (catalog?.RegisteredFolders is null)
+            {
+                return CatalogLoadResult.CatalogError("Catalog JSON does not contain a registered folders collection.");
+            }
+
+            return CatalogLoadResult.Success(catalog, ComputeVersion(bytes));
         }
         catch (JsonException ex)
         {
@@ -117,13 +123,25 @@ public sealed class CatalogStore
         }
     }
 
-    private static IntegrityCatalog Normalize(IntegrityCatalog? catalog)
+    public CatalogSaveResult SaveIfUnchanged(IntegrityCatalog catalog, string? expectedVersion)
     {
-        if (catalog is null || catalog.RegisteredFolders is null)
+        ArgumentNullException.ThrowIfNull(catalog);
+
+        var current = Load();
+        if (!current.IsSuccess)
         {
-            return IntegrityCatalog.Empty;
+            return CatalogSaveResult.CatalogError(
+                $"Catalog could not be written because the existing catalog is invalid or unreadable: {current.ErrorMessage}");
         }
 
-        return catalog;
+        if (!StringComparer.Ordinal.Equals(current.Version, expectedVersion))
+        {
+            return CatalogSaveResult.CatalogError("Catalog changed during verification; no verification timestamp was saved.");
+        }
+
+        return Save(catalog);
     }
+
+    private static string ComputeVersion(byte[] bytes) =>
+        Convert.ToHexString(SHA256.HashData(bytes));
 }

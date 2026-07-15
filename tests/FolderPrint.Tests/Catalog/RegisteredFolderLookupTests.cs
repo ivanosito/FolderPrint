@@ -58,6 +58,55 @@ public sealed class RegisteredFolderLookupTests
         Assert.Equal(RegisteredFolderLookupStatus.CatalogError, invalidFiles.Status);
     }
 
+    [Theory]
+    [InlineData("short")]
+    [InlineData("gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")]
+    public void Find_InvalidPersistedSha256_ReturnsCatalogError(string sha256)
+    {
+        var root = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "invalid-hash"));
+        var folder = Folder(root) with { Files = [new FileFingerprint("file.txt", sha256, 1, Timestamp)] };
+
+        var result = RegisteredFolderLookup.Find(new IntegrityCatalog([folder]), root);
+
+        Assert.Equal(RegisteredFolderLookupStatus.CatalogError, result.Status);
+    }
+
+    [Theory]
+    [InlineData("../escape.txt")]
+    [InlineData("nested/../../escape.txt")]
+    [InlineData("nested//file.txt")]
+    [InlineData("./file.txt")]
+    [InlineData("C:\\absolute.txt")]
+    [InlineData("/absolute.txt")]
+    public void Find_UnsafePersistedRelativePath_ReturnsCatalogError(string relativePath)
+    {
+        var root = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "unsafe-path"));
+        var folder = Folder(root) with { Files = [new FileFingerprint(relativePath, ValidSha256, 1, Timestamp)] };
+
+        var result = RegisteredFolderLookup.Find(new IntegrityCatalog([folder]), root);
+
+        Assert.Equal(RegisteredFolderLookupStatus.CatalogError, result.Status);
+    }
+
+    [Fact]
+    public void Find_DuplicateOrdinalPersistedPaths_ReturnsCatalogError()
+    {
+        var root = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "duplicate-path"));
+        var folder = Folder(root) with
+        {
+            Files =
+            [
+                new FileFingerprint("file.txt", ValidSha256, 1, Timestamp),
+                new FileFingerprint("file.txt", ValidSha256, 1, Timestamp)
+            ]
+        };
+
+        var result = RegisteredFolderLookup.Find(new IntegrityCatalog([folder]), root);
+
+        Assert.Equal(RegisteredFolderLookupStatus.CatalogError, result.Status);
+        Assert.Contains("duplicate", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void Find_MalformedRequestedPath_ReturnsInvalidRoot()
     {
@@ -66,6 +115,8 @@ public sealed class RegisteredFolderLookupTests
         Assert.Equal(RegisteredFolderLookupStatus.InvalidRoot, result.Status);
     }
 
+    private const string ValidSha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
     private static RegisteredFolder Folder(string rootPath) =>
-        new("folder-id", rootPath, Timestamp, null, [new FileFingerprint("file.txt", "hash", 1, Timestamp)]);
+        new("folder-id", rootPath, Timestamp, null, [new FileFingerprint("file.txt", ValidSha256, 1, Timestamp)]);
 }

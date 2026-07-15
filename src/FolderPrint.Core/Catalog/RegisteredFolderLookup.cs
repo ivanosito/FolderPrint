@@ -75,15 +75,38 @@ public static class RegisteredFolderLookup
             return "Catalog contains an invalid registered folder entry.";
         }
 
+        var relativePaths = new HashSet<string>(StringComparer.Ordinal);
         foreach (var file in folder.Files)
         {
-            if (file is null || string.IsNullOrWhiteSpace(file.RelativePath) || string.IsNullOrWhiteSpace(file.Sha256))
+            if (file is null || !IsSafeRelativePath(file.RelativePath) || !IsSha256(file.Sha256))
             {
                 return "Catalog contains an invalid file fingerprint entry.";
+            }
+
+            if (!relativePaths.Add(file.RelativePath))
+            {
+                return "Catalog contains duplicate file fingerprint paths.";
             }
         }
 
         return null;
+    }
+
+    private static bool IsSha256(string? value) =>
+        value is { Length: 64 } && value.All(Uri.IsHexDigit);
+
+    private static bool IsSafeRelativePath(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)
+            || Path.IsPathRooted(value)
+            || value[0] is '/' or '\\'
+            || (value.Length >= 2 && char.IsAsciiLetter(value[0]) && value[1] == ':'))
+        {
+            return false;
+        }
+
+        var segments = value.Split(['/', '\\']);
+        return segments.All(segment => segment.Length > 0 && segment is not "." and not "..");
     }
 
     private static RegisteredFolderLookupResult CatalogError(string normalizedRootPath, string message) =>

@@ -2,7 +2,7 @@
 storyId: "3.4"
 storyKey: "3-4-wire-verify-folder-command-and-reporting"
 title: "Wire verify <folder> Command and Reporting"
-status: review
+status: done
 baseline_commit: 1302a7285a97fcbeddc0a237c34db26f37d5fe6a
 epic: "Epic 3: Verify Folder Integrity"
 created: 2026-07-15
@@ -13,7 +13,7 @@ previousStory: "3-3-include-duplicate-and-unreadable-findings-in-verification.md
 
 # Story 3.4: Wire `verify <folder>` Command and Reporting
 
-Status: review
+Status: done
 
 ## Story
 
@@ -120,6 +120,13 @@ The formatter may return a string, lines, or typed display sections, but the con
   - [x] Preserve existing register/list behavior and all Story 3.1–3.3 result tests.
 - [x] Run full validation and scope checks before marking tasks complete. (AC: 12-14)
 
+### Review Findings
+
+- [x] [Review][Patch] Add optimistic catalog conflict detection so verification returns `CatalogError` instead of overwriting changes made after its initial load. [src/FolderPrint.Cli/CliRunner.cs:75]
+- [x] [Review][Patch] Treat existing JSON null or null `registeredFolders` as `CatalogError`, while preserving missing-file-as-empty behavior. [src/FolderPrint.Core/Catalog/CatalogStore.cs:24]
+- [x] [Review][Patch] Recheck the verified root when scanner file/directory exceptions occur so child-disappearance traversal failures map to `ScanError`, not `NotFound`. [src/FolderPrint.Cli/CliRunner.cs:103]
+- [x] [Review][Patch] Reject malformed persisted fingerprint hashes, unsafe/non-relative paths, and duplicate ordinal paths before comparison. [src/FolderPrint.Core/Catalog/RegisteredFolderLookup.cs:73]
+- [x] [Review][Patch] Add an ordinal message tie-breaker for equal-hash pathless ambiguity findings. [src/FolderPrint.Core/Reporting/ReportFormatter.cs:48]
 ## Dev Notes
 
 ### Current Implementation Seams to Reuse
@@ -282,7 +289,8 @@ GPT-5 Codex
 - GREEN (Core): 9 focused lookup, timestamp, and formatter tests passed.
 - RED (CLI): focused tests failed because `CliRunner` did not expose verification injection or dispatch.
 - GREEN (CLI): 10 focused CLI tests passed; expanded Story 3.4 suite passed 21 tests including real scanner/catalog integration.
-- Final validation: restore succeeded; build succeeded with 0 warnings/0 errors; all 116 tests passed; formatter, dependency, boundary, scope, and diff checks passed.
+- Final implementation validation: restore succeeded; build succeeded with 0 warnings/0 errors; all 116 tests passed; formatter, dependency, boundary, scope, and diff checks passed.
+- Code-review validation: formatting passed; Release build succeeded with 0 warnings/0 errors; all 131 tests passed; Core dependency, excluded-scope, and diff checks passed.
 
 ### Completion Notes List
 
@@ -292,6 +300,7 @@ GPT-5 Codex
 - Wired `verify <folder>` end to end through catalog load, lookup, root validation, one scan, existing comparison, atomic timestamp save, report output, and typed exit-code mapping.
 - Added expected failure handling for invalid/missing/file roots, malformed catalogs, traversal failures, save failures, and unexpected exceptions without false success output.
 - Added 21 Story 3.4 tests; full regression count increased from 95 to 116 with no production dependencies or excluded-scope behavior added.
+- Code review added optimistic catalog conflict detection, strict required catalog/fingerprint validation, correct traversal-race classification, and a final deterministic report tie-breaker, with 15 additional test cases.
 
 ### File List
 
@@ -299,11 +308,14 @@ GPT-5 Codex
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - `docs/stories/story-011.md`
 - `src/FolderPrint.Cli/CliRunner.cs`
+- `src/FolderPrint.Core/Catalog/CatalogLoadResult.cs`
+- `src/FolderPrint.Core/Catalog/CatalogStore.cs`
 - `src/FolderPrint.Core/Catalog/IntegrityCatalog.cs`
 - `src/FolderPrint.Core/Catalog/RegisteredFolderLookup.cs`
 - `src/FolderPrint.Core/Catalog/RegisteredFolderLookupResult.cs`
 - `src/FolderPrint.Core/Catalog/RegisteredFolderLookupStatus.cs`
 - `src/FolderPrint.Core/Reporting/ReportFormatter.cs`
+- `tests/FolderPrint.Tests/Catalog/CatalogStoreTests.cs`
 - `tests/FolderPrint.Tests/Catalog/IntegrityCatalogVerificationTests.cs`
 - `tests/FolderPrint.Tests/Catalog/RegisteredFolderLookupTests.cs`
 - `tests/FolderPrint.Tests/Cli/CliVerifyIntegrationTests.cs`
@@ -313,3 +325,4 @@ GPT-5 Codex
 
 - 2026-07-15: Created implementation-ready Story 3.4 as the committed Sprint 005 story; no production code implemented.
 - 2026-07-15: Implemented V1 CLI verification, deterministic reporting, safe timestamp persistence, and 21 automated tests; moved story to review.
+- 2026-07-15: Applied all code-review patches, added 15 regression cases, passed 131 tests and quality checks, and marked Story 3.4 done.
