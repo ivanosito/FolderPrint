@@ -44,7 +44,7 @@ development_status:
   epic-2-retrospective: optional
   epic-3: in-progress
   3-1-compare-basic-file-states: done
-  3-2-detect-moved-or-renamed-files: ready-for-dev
+  3-2-detect-moved-or-renamed-files: review
   3-3-include-duplicate-and-unreadable-findings-in-verification: backlog
   3-4-wire-verify-folder-command-and-reporting: backlog
   epic-3-retrospective: optional
@@ -57,12 +57,3 @@ development_status:
   5-1-implement-duplicatefinder-for-current-snapshots: backlog
   5-2-wire-duplicates-folder-command: backlog
   epic-5-retrospective: optional
-
-
-
-
-
-
-
-
-

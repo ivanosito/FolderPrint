@@ -1,8 +1,9 @@
-﻿---
+---
 storyId: "3.2"
 storyKey: "3-2-detect-moved-or-renamed-files"
 title: "Detect Moved or Renamed Files"
-status: ready-for-dev
+status: review
+baseline_commit: 32e93630b9d8a862dd114bdeb628ac2957ac032a
 epic: "Epic 3: Verify Folder Integrity"
 created: 2026-07-14
 updated: 2026-07-14
@@ -11,7 +12,7 @@ sprint: "Sprint 004 committed"
 
 # Story 3.2: Detect Moved or Renamed Files
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -19,14 +20,17 @@ As a user verifying a registered folder, I want unchanged content at a different
 
 ## Context
 
-Story 3.1's reviewed pure `VerificationService.Compare` classifies same-path files as `Unchanged`/`Modified` and unmatched paths as `Missing`/`New`. Story 3.2 reconciles only unmatched readable fingerprints.
+Story 3.1's reviewed pure `VerificationService.Compare` classifies same-path files as `Unchanged`/`Modified` and unmatched paths as `Missing`/
+ew`. Story 3.2 reconciles only unmatched readable fingerprints.
 
-The model lacks typed ambiguity. Add only `FileChangeType.AmbiguousMovedOrRenamed`: one pathless marker per ambiguous hash while retaining affected `Missing`/`New` findings. This reports uncertainty without inventing paths or implementing Story 3.3 duplicate groups.
+The model lacks typed ambiguity. Add only `FileChangeType.AmbiguousMovedOrRenamed`: one pathless marker per ambiguous hash while retaining affected `Missing`/
+ew` findings. This reports uncertainty without inventing paths or implementing Story 3.3 duplicate groups.
 
 ## Scope
 
 - Extend the existing service; group unmatched candidates by ordinal SHA-256.
-- Convert a 1:1 cross-side group to one `MovedOrRenamed` with both paths, suppressing its `Missing`/`New` pair.
+- Convert a 1:1 cross-side group to one `MovedOrRenamed` with both paths, suppressing its `Missing`/
+ew` pair.
 - For 1:N, N:1, and N:M, retain all paths and add one ambiguity marker per hash.
 - Preserve deterministic ordering, input immutability, metadata, `HasDifferences`, and empty duplicate/unreadable collections.
 
@@ -36,7 +40,8 @@ The model lacks typed ambiguity. Add only `FileChangeType.AmbiguousMovedOrRename
 
 ## Acceptance Criteria
 
-1. A unique unmatched equal-hash pair yields one `MovedOrRenamed` with both paths/hash and no separate `Missing`/`New`; cross-subfolder moves follow the same rule.
+1. A unique unmatched equal-hash pair yields one `MovedOrRenamed` with both paths/hash and no separate `Missing`/
+ew`; cross-subfolder moves follow the same rule.
 2. Same-path files remain `Unchanged`/`Modified` and never enter reconciliation.
 3. A 1:N, N:1, or N:M group emits no exact pair; retain all paths plus one `AmbiguousMovedOrRenamed` marker.
 4. The marker has null paths, shared hash, and `Move/rename is ambiguous: {baselineCount} baseline candidates and {currentCount} current candidates share this hash.`
@@ -58,9 +63,9 @@ References: `docs/prd.md#FR-12 Classify moved or renamed files`; `docs/architect
 
 ## Tasks
 
-- [ ] Preserve same-path behavior and collect unmatched candidates. (AC: 1-2, 6-8)
-- [ ] Reconcile unique and ambiguous hash groups losslessly and deterministically. (AC: 1-6)
-- [ ] Add tests for rename, subfolder move, same-path precedence, 1:N/N:1/N:M, one-sided/mixed groups, ordering, immutability, and differences. (AC: 1-8)
+- [x] Preserve same-path behavior and collect unmatched candidates. (AC: 1-2, 6-8)
+- [x] Reconcile unique and ambiguous hash groups losslessly and deterministically. (AC: 1-6)
+- [x] Add tests for rename, subfolder move, same-path precedence, 1:N/N:1/N:M, one-sided/mixed groups, ordering, immutability, and differences. (AC: 1-8)
 
 ## Validation Commands
 
@@ -84,12 +89,35 @@ git diff --check
 
 ### Agent Model Used
 
+OpenAI Codex (GPT-5)
+
+### Implementation Plan
+
+- Add failing moved/renamed and ambiguity tests first.
+- Preserve same-path comparison, reconcile only unmatched fingerprints by ordinal SHA-256, then sort final typed findings deterministically.
+- Keep duplicate/unreadable collections and all CLI/catalog behavior unchanged.
+
 ### Debug Log References
+
+- Red: focused tests failed because move reconciliation and `AmbiguousMovedOrRenamed` did not exist.
+- Green: 16 focused verification tests passed.
+- Full validation: restore/build succeeded with 0 warnings/errors; all 84 tests passed; Core has no references or packages; `git diff --check` passed.
 
 ### Completion Notes List
 
+- Added unique moved/renamed findings without duplicate `Missing`/`New` output.
+- Added lossless typed ambiguity for 1:N, N:1, and N:M groups without arbitrary pairing.
+- Preserved Story 3.1 classifications, result metadata, deterministic ordering, input immutability, and empty Story 3.3 collections.
+
 ### File List
 
+- `_bmad-output/implementation-artifacts/3-2-detect-moved-or-renamed-files.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `docs/stories/story-009.md`
+- `src/FolderPrint.Core/Models/FileChangeType.cs`
+- `src/FolderPrint.Core/Verification/VerificationService.cs`
+- `tests/FolderPrint.Tests/Verification/VerificationServiceTests.cs`
 ## Change Log
 
 - 2026-07-14: Created implementation-ready Story 3.2; no implementation performed.
+- 2026-07-14: Implemented deterministic moved/renamed reconciliation and typed ambiguity behavior; 84 tests pass; moved to review.

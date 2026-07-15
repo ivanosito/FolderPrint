@@ -7,6 +7,7 @@ public enum FileChangeType
     Missing,
     New,
     MovedOrRenamed,
+    AmbiguousMovedOrRenamed,
     Duplicate,
     Unreadable
 }
