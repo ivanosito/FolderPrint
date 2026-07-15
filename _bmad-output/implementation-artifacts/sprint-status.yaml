@@ -50,7 +50,7 @@ development_status:
   epic-3-retrospective: done
   epic-4: in-progress
   4-1-display-registered-folder-metadata: done
-  4-2-unregister-a-folder: backlog
+  4-2-unregister-a-folder: ready-for-dev
   4-3-refresh-a-registered-folder-baseline: backlog
   epic-4-retrospective: optional
   epic-5: backlog
@@ -66,4 +66,4 @@ action_items:
   - epic: 3
     action: "Define conflict-aware catalog mutation expectations before Stories 4.2 and 4.3, including preservation of concurrent changes, invalid catalogs, identity metadata, and prior state on failure."
     owner: "Architect/Developer"
-    status: open
+    status: done
