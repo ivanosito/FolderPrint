@@ -71,6 +71,53 @@ public sealed class CatalogValidatorTests
         Assert.False(result.IsSuccess);
         Assert.Contains("invalid registered folder path", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
+    [Fact]
+    public void Validate_ControlCharacterId_ReturnsCatalogError()
+    {
+        var result = CatalogValidator.Validate(new IntegrityCatalog([Folder(MissingRoot("control-id"), "folder\ninjected")]));
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("invalid registered folder", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Validate_DefaultCreatedTimestamp_ReturnsCatalogError()
+    {
+        var folder = Folder(MissingRoot("default-created")) with { CreatedAtUtc = default };
+
+        var result = CatalogValidator.Validate(new IntegrityCatalog([folder]));
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("invalid registered folder", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Validate_ControlCharacterFingerprintPath_ReturnsCatalogError()
+    {
+        var folder = Folder(MissingRoot("control-path")) with
+        {
+            Files = [new FileFingerprint("file\0name.txt", ValidSha256, 1, Timestamp)]
+        };
+
+        var result = CatalogValidator.Validate(new IntegrityCatalog([folder]));
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("invalid file fingerprint", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Validate_NegativeFingerprintSize_ReturnsCatalogError()
+    {
+        var folder = Folder(MissingRoot("negative-size")) with
+        {
+            Files = [new FileFingerprint("file.txt", ValidSha256, -1, Timestamp)]
+        };
+
+        var result = CatalogValidator.Validate(new IntegrityCatalog([folder]));
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("invalid file fingerprint", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
 
     [Fact]
     public void Validate_DuplicateNormalizedRoots_ReturnsCatalogError()

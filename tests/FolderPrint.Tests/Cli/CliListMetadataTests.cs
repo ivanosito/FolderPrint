@@ -85,6 +85,32 @@ public sealed class CliListMetadataTests
         Assert.Contains("catalog", fixture.Error.ToString(), StringComparison.OrdinalIgnoreCase);
         Assert.Equal(originalBytes, File.ReadAllBytes(fixture.CatalogPath));
     }
+    [Fact]
+    public void Run_ListReviewMalformedValues_ReturnCatalogErrorWithoutOutputOrMutation()
+    {
+        var root = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "FolderPrint-List-Invalid"));
+        var catalogs = new IntegrityCatalog[]
+        {
+            new([Folder("folder\ninjected", root, null, [])]),
+            new([Folder("folder", root, null, []) with { CreatedAtUtc = default }]),
+            new([Folder("folder", root, null, [new FileFingerprint("file\0name.txt", ValidSha256, 1, Created)])]),
+            new([Folder("folder", root, null, [new FileFingerprint("file.txt", ValidSha256, -1, Created)])])
+        };
+
+        foreach (var catalog in catalogs)
+        {
+            using var fixture = new ListFixture();
+            fixture.Save(catalog);
+            var originalBytes = File.ReadAllBytes(fixture.CatalogPath);
+
+            var exitCode = fixture.RunnerWithThrowingVerification().Run(["list"]);
+
+            Assert.Equal(ExitCodes.CatalogError, exitCode);
+            Assert.Equal(string.Empty, fixture.Output.ToString());
+            Assert.Contains("catalog", fixture.Error.ToString(), StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(originalBytes, File.ReadAllBytes(fixture.CatalogPath));
+        }
+    }
 
     [Fact]
     public void Run_ListDuplicateNormalizedRoots_ReturnsCatalogErrorWithoutPartialOutputOrMutation()

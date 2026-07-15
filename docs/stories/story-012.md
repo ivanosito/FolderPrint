@@ -2,7 +2,7 @@
 storyId: "4.1"
 storyKey: "4-1-display-registered-folder-metadata"
 title: "Display Registered Folder Metadata"
-status: review
+status: done
 baseline_commit: f388df856ecc7e5f24a4fd5f84be6c1191900ae6
 epic: "Epic 4: Manage Registered Folders and Baselines"
 created: 2026-07-15
@@ -20,7 +20,7 @@ source:
 
 # Story 4.1: Display Registered Folder Metadata
 
-Status: review
+Status: done
 
 ## Story
 
@@ -107,6 +107,13 @@ Creating this artifact completes the Epic 3 learning-transfer action for Story 4
   - [x] Compare catalog bytes and loaded metadata before/after successful non-empty list; assert target files, if present, remain unchanged.
   - [x] Preserve existing register/list and all Story 3.4 verify regression coverage.
 - [x] Run full validation and scope checks before marking tasks complete. (AC: 7-9)
+
+### Review Findings
+
+- [x] [Review][Patch] Reject invalid/control-character fingerprint paths as typed catalog errors [src/FolderPrint.Core/Catalog/CatalogValidator.cs:60]
+- [x] [Review][Patch] Reject negative persisted fingerprint sizes [src/FolderPrint.Core/Catalog/CatalogValidator.cs:60]
+- [x] [Review][Patch] Reject line-breaking/control-character registration IDs that corrupt fixed metadata blocks [src/FolderPrint.Core/Catalog/CatalogValidator.cs:50]
+- [x] [Review][Patch] Reject missing/default persisted registration timestamps instead of rendering year 0001 [src/FolderPrint.Core/Catalog/CatalogValidator.cs:50]
 
 ## Dev Notes
 
@@ -254,6 +261,7 @@ GPT-5 Codex
 - RED (CLI list adapter): 3 of 4 focused tests failed because list still printed only paths and accepted malformed semantic catalog data.
 - GREEN (CLI list adapter): 27 list, register/list, and verify tests passed after wiring load, validation, formatting, and writer output without any save or target-root access.
 - Final validation: restore succeeded; Release build succeeded with 0 warnings and 0 errors; all 146 tests passed; the 55-test focused suite, formatting, Core dependency/boundary, excluded-scope, and diff checks passed.
+- Code-review validation: 43 focused tests and all 151 tests passed; Release build, formatting, Core dependency/boundary, excluded-scope, and diff checks passed.
 
 ### Completion Notes List
 
@@ -264,6 +272,7 @@ GPT-5 Codex
 - Wired non-empty `list` through shared validation and Core formatting while preserving the exact missing/empty message and typed catalog-error output separation.
 - Added read-only regression proof using raw catalog bytes, loaded metadata, target bytes, missing roots, and injected scan/compare delegates that throw if called.
 - Added 15 Story 4.1 test cases, increasing the full regression suite from 131 to 146 without new dependencies or excluded-scope behavior.
+- Code review hardened persisted catalog validation against control-character IDs/paths, negative sizes, and missing/default registration timestamps, adding 5 regression tests.
 
 ### File List
 
@@ -282,3 +291,4 @@ GPT-5 Codex
 ## Change Log
 
 - 2026-07-15: Implemented deterministic read-only registered-folder metadata listing, shared catalog validation, and 15 automated test cases; moved Story 4.1 to review.
+- 2026-07-15: Applied all four code-review patches, passed 151 tests and quality checks, and marked Story 4.1 done.

@@ -49,7 +49,11 @@ public static class CatalogValidator
             return "Catalog contains a null registered folder entry.";
         }
 
-        if (string.IsNullOrWhiteSpace(folder.Id) || string.IsNullOrWhiteSpace(folder.RootPath) || folder.Files is null)
+        if (string.IsNullOrWhiteSpace(folder.Id)
+            || folder.Id.Any(char.IsControl)
+            || string.IsNullOrWhiteSpace(folder.RootPath)
+            || folder.CreatedAtUtc == default
+            || folder.Files is null)
         {
             return "Catalog contains an invalid registered folder entry.";
         }
@@ -57,7 +61,10 @@ public static class CatalogValidator
         var relativePaths = new HashSet<string>(StringComparer.Ordinal);
         foreach (var file in folder.Files)
         {
-            if (file is null || !IsSafeRelativePath(file.RelativePath) || !IsSha256(file.Sha256))
+            if (file is null
+                || !IsSafeRelativePath(file.RelativePath)
+                || !IsSha256(file.Sha256)
+                || file.Size < 0)
             {
                 return "Catalog contains an invalid file fingerprint entry.";
             }
@@ -77,6 +84,7 @@ public static class CatalogValidator
     private static bool IsSafeRelativePath(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)
+            || value.Any(char.IsControl)
             || Path.IsPathRooted(value)
             || value[0] is '/' or '\\'
             || (value.Length >= 2 && char.IsAsciiLetter(value[0]) && value[1] == ':'))
