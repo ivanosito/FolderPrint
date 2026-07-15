@@ -90,9 +90,35 @@ public sealed class VerificationServiceTests
         Assert.Equal("old-name.txt", change.BaselineRelativePath);
         Assert.Equal("new-name.txt", change.CurrentRelativePath);
         Assert.Equal("same-hash", change.Sha256);
+        Assert.Equal("File was moved or renamed.", change.Message);
+        Assert.True(result.HasDifferences);
         Assert.Empty(result.DuplicateGroups);
+        Assert.Empty(result.UnreadableFiles);
     }
 
+    [Fact]
+    public void Compare_SameHashMovedAcrossSubfolders_ReturnsMovedOrRenamed()
+    {
+        var result = Compare(
+            [Fingerprint("archive/old/file.txt", "same-hash")],
+            [Fingerprint("release/new/file.txt", "same-hash")]);
+
+        var change = Assert.Single(result.Changes);
+        Assert.Equal(FileChangeType.MovedOrRenamed, change.Type);
+        Assert.Equal("archive/old/file.txt", change.BaselineRelativePath);
+        Assert.Equal("release/new/file.txt", change.CurrentRelativePath);
+    }
+
+    [Fact]
+    public void Compare_SamePathModifiedHashDoesNotParticipateInMoveReconciliation()
+    {
+        var result = Compare(
+            [Fingerprint("same.txt", "shared")],
+            [Fingerprint("same.txt", "changed"), Fingerprint("new.txt", "shared")]);
+
+        Assert.Equal([FileChangeType.New, FileChangeType.Modified], result.Changes.Select(change => change.Type));
+        Assert.DoesNotContain(result.Changes, change => change.Type == FileChangeType.MovedOrRenamed);
+    }
     [Fact]
     public void Compare_MixedUnorderedInputs_ReturnsCompleteOrdinalOrdering()
     {
@@ -138,6 +164,7 @@ public sealed class VerificationServiceTests
         Assert.Null(ambiguity.CurrentRelativePath);
         Assert.Equal("shared", ambiguity.Sha256);
         Assert.Equal($"Move/rename is ambiguous: {baselineCount} baseline candidates and {currentCount} current candidates share this hash.", ambiguity.Message);
+        Assert.True(result.HasDifferences);
     }
 
     [Fact]
@@ -149,6 +176,15 @@ public sealed class VerificationServiceTests
         Assert.DoesNotContain(result.Changes, c => c.Type == FileChangeType.AmbiguousMovedOrRenamed);
     }
 
+    [Fact]
+    public void Compare_CurrentOnlyRepeatedHash_ReturnsNewWithoutAmbiguity()
+    {
+        var result = Compare([], [Fingerprint("b.txt", "shared"), Fingerprint("a.txt", "shared")]);
+
+        Assert.Equal(["a.txt", "b.txt"], result.Changes.Select(ChangePath));
+        Assert.All(result.Changes, change => Assert.Equal(FileChangeType.New, change.Type));
+        Assert.DoesNotContain(result.Changes, change => change.Type == FileChangeType.AmbiguousMovedOrRenamed);
+    }
     [Fact]
     public void Compare_ShuffledMixedGroups_ReturnsDeterministicOrderingAndPreservesInputs()
     {

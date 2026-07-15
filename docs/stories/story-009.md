@@ -2,7 +2,7 @@
 storyId: "3.2"
 storyKey: "3-2-detect-moved-or-renamed-files"
 title: "Detect Moved or Renamed Files"
-status: review
+status: done
 baseline_commit: 32e93630b9d8a862dd114bdeb628ac2957ac032a
 epic: "Epic 3: Verify Folder Integrity"
 created: 2026-07-14
@@ -12,7 +12,7 @@ sprint: "Sprint 004 committed"
 
 # Story 3.2: Detect Moved or Renamed Files
 
-Status: review
+Status: done
 
 ## Story
 
@@ -20,17 +20,14 @@ As a user verifying a registered folder, I want unchanged content at a different
 
 ## Context
 
-Story 3.1's reviewed pure `VerificationService.Compare` classifies same-path files as `Unchanged`/`Modified` and unmatched paths as `Missing`/
-ew`. Story 3.2 reconciles only unmatched readable fingerprints.
+Story 3.1's reviewed pure `VerificationService.Compare` classifies same-path files as `Unchanged`/`Modified` and unmatched paths as `Missing`/`New`. Story 3.2 reconciles only unmatched readable fingerprints.
 
-The model lacks typed ambiguity. Add only `FileChangeType.AmbiguousMovedOrRenamed`: one pathless marker per ambiguous hash while retaining affected `Missing`/
-ew` findings. This reports uncertainty without inventing paths or implementing Story 3.3 duplicate groups.
+The model lacks typed ambiguity. Add only `FileChangeType.AmbiguousMovedOrRenamed`: one pathless marker per ambiguous hash while retaining affected `Missing`/`New` findings. This reports uncertainty without inventing paths or implementing Story 3.3 duplicate groups.
 
 ## Scope
 
 - Extend the existing service; group unmatched candidates by ordinal SHA-256.
-- Convert a 1:1 cross-side group to one `MovedOrRenamed` with both paths, suppressing its `Missing`/
-ew` pair.
+- Convert a 1:1 cross-side group to one `MovedOrRenamed` with both paths, suppressing its `Missing`/`New` pair.
 - For 1:N, N:1, and N:M, retain all paths and add one ambiguity marker per hash.
 - Preserve deterministic ordering, input immutability, metadata, `HasDifferences`, and empty duplicate/unreadable collections.
 
@@ -40,8 +37,7 @@ ew` pair.
 
 ## Acceptance Criteria
 
-1. A unique unmatched equal-hash pair yields one `MovedOrRenamed` with both paths/hash and no separate `Missing`/
-ew`; cross-subfolder moves follow the same rule.
+1. A unique unmatched equal-hash pair yields one `MovedOrRenamed` with both paths/hash and no separate `Missing`/`New`; cross-subfolder moves follow the same rule.
 2. Same-path files remain `Unchanged`/`Modified` and never enter reconciliation.
 3. A 1:N, N:1, or N:M group emits no exact pair; retain all paths plus one `AmbiguousMovedOrRenamed` marker.
 4. The marker has null paths, shared hash, and `Move/rename is ambiguous: {baselineCount} baseline candidates and {currentCount} current candidates share this hash.`
@@ -67,6 +63,11 @@ References: `docs/prd.md#FR-12 Classify moved or renamed files`; `docs/architect
 - [x] Reconcile unique and ambiguous hash groups losslessly and deterministically. (AC: 1-6)
 - [x] Add tests for rename, subfolder move, same-path precedence, 1:N/N:1/N:M, one-sided/mixed groups, ordering, immutability, and differences. (AC: 1-8)
 
+### Review Findings
+
+- [x] [Review][Patch] Repair corrupted `New` references in both story copies [docs/stories/story-009.md:23]
+- [x] [Review][Patch] Add the claimed cross-subfolder move and same-path precedence tests [tests/FolderPrint.Tests/Verification/VerificationServiceTests.cs:81]
+- [x] [Review][Patch] Complete new-behavior assertions for `HasDifferences`, result collections/message, and current-only repeated hashes [tests/FolderPrint.Tests/Verification/VerificationServiceTests.cs:81]
 ## Validation Commands
 
 ```powershell
@@ -101,7 +102,8 @@ OpenAI Codex (GPT-5)
 
 - Red: focused tests failed because move reconciliation and `AmbiguousMovedOrRenamed` did not exist.
 - Green: 16 focused verification tests passed.
-- Full validation: restore/build succeeded with 0 warnings/errors; all 84 tests passed; Core has no references or packages; `git diff --check` passed.
+- Full validation: restore/build succeeded with 0 warnings/errors; all 87 tests passed; Core has no references or packages; `git diff --check` passed.
+- Review patches: repaired story text and added subfolder, same-path precedence, `HasDifferences`, message/collection, and current-only repeated-hash coverage.
 
 ### Completion Notes List
 
@@ -120,4 +122,5 @@ OpenAI Codex (GPT-5)
 ## Change Log
 
 - 2026-07-14: Created implementation-ready Story 3.2; no implementation performed.
-- 2026-07-14: Implemented deterministic moved/renamed reconciliation and typed ambiguity behavior; 84 tests pass; moved to review.
+- 2026-07-14: Implemented deterministic moved/renamed reconciliation and typed ambiguity behavior; moved to review.
+- 2026-07-14: Addressed all 3 code-review findings; 87 tests pass; story marked done.
