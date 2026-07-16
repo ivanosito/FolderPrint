@@ -2,7 +2,7 @@
 storyId: '4.3'
 storyKey: '4-3-refresh-a-registered-folder-baseline'
 title: 'Refresh a Registered Folder Baseline'
-status: ready-for-dev
+status: done
 baseline_commit: 3c4cc0505fd8dc5f7920c0b20d3084d465812e64
 epic: 'Epic 4: Manage Registered Folders and Baselines'
 created: 2026-07-15
@@ -21,7 +21,7 @@ source:
 
 # Story 4.3: Refresh a Registered Folder Baseline
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -88,24 +88,30 @@ Standalone duplicates, DuplicateFinder, verification comparison or drift reporti
 
 ## Tasks / Subtasks
 
-- [ ] Add immutable baseline replacement to IntegrityCatalog. (AC: 3, 11)
-  - [ ] Preserve identity and survivors, own files, store UTC refresh time.
-  - [ ] Test positions, empty transitions, source immutability, duplicate IDs, invalid indices, UTC conversion, and owned files.
-- [ ] Add RefreshStatus, RefreshResult, and RefreshService under Core Registration. (AC: 2-9, 11)
-  - [ ] Sequence normalize -> load/version -> lookup -> catalog-inside-root guard -> directory validation -> one scan -> unreadable rejection -> one clock -> immutable replacement -> one guarded save.
-  - [ ] Return stored root and file count only after save; return typed sorted unreadables on scan failure.
-  - [ ] Make RegistrationService.IsPathInsideRoot internal static, or extract one internal Core helper; never make it public or duplicate it. Preserve registration behavior.
-- [ ] Wire explicit refresh dispatch and typed CLI mapping. (AC: 1, 4-6, 10-11)
-  - [ ] Parser, enum, usage, and exit values already exist; do not change them.
-  - [ ] Append refresh scan and clock injection parameters so positional verification delegates remain compatible.
-  - [ ] Emit exact output and never use verification reporting.
-- [ ] Add reliability, concurrency, safety, and regression tests. (AC: 1-12)
-  - [ ] Cover aliases and nonmatches, missing/empty/malformed/ambiguous catalogs, invalid unrelated data, root failures, scan exceptions, unreadables, and empty snapshots.
-  - [ ] Prove zero pre-lookup target access, one scan/clock/save, raw-byte failure preservation, and no not-found lock or catalog creation.
-  - [ ] Prove writer and external conflicts preserve latest state without retry, resurrection, output, or temp residue.
-  - [ ] Prove target tree, content, last-write data, and attributes remain unchanged, including catalog-inside-root.
-  - [ ] Add refresh and verify integration plus survivor command regressions.
-- [ ] Run full validation and scope checks. (AC: 7, 9-12)
+- [x] Add immutable baseline replacement to IntegrityCatalog. (AC: 3, 11)
+  - [x] Preserve identity and survivors, own files, store UTC refresh time.
+  - [x] Test positions, empty transitions, source immutability, duplicate IDs, invalid indices, UTC conversion, and owned files.
+- [x] Add RefreshStatus, RefreshResult, and RefreshService under Core Registration. (AC: 2-9, 11)
+  - [x] Sequence normalize -> load/version -> lookup -> catalog-inside-root guard -> directory validation -> one scan -> unreadable rejection -> one clock -> immutable replacement -> one guarded save.
+  - [x] Return stored root and file count only after save; return typed sorted unreadables on scan failure.
+  - [x] Make RegistrationService.IsPathInsideRoot internal static, or extract one internal Core helper; never make it public or duplicate it. Preserve registration behavior.
+- [x] Wire explicit refresh dispatch and typed CLI mapping. (AC: 1, 4-6, 10-11)
+  - [x] Parser, enum, usage, and exit values already exist; do not change them.
+  - [x] Append refresh scan and clock injection parameters so positional verification delegates remain compatible.
+  - [x] Emit exact output and never use verification reporting.
+- [x] Add reliability, concurrency, safety, and regression tests. (AC: 1-12)
+  - [x] Cover aliases and nonmatches, missing/empty/malformed/ambiguous catalogs, invalid unrelated data, root failures, scan exceptions, unreadables, and empty snapshots.
+  - [x] Prove zero pre-lookup target access, one scan/clock/save, raw-byte failure preservation, and no not-found lock or catalog creation.
+  - [x] Prove writer and external conflicts preserve latest state without retry, resurrection, output, or temp residue.
+  - [x] Prove target tree, content, last-write data, and attributes remain unchanged, including catalog-inside-root.
+  - [x] Add refresh and verify integration plus survivor command regressions.
+- [x] Run full validation and scope checks. (AC: 7, 9-12)
+
+### Review Findings
+
+- [x] [Review][Patch] Filesystem-link aliases can bypass catalog containment [src/FolderPrint.Core/Registration/RefreshService.cs:94]
+- [x] [Review][Patch] Hash-provider exceptions escape the typed scan-error contract [src/FolderPrint.Core/Registration/RefreshService.cs:116]
+- [x] [Review][Patch] Project story mirror remains stale at ready-for-dev [docs/stories/story-014.md:5]
 
 ## Dev Notes
 
@@ -189,14 +195,51 @@ Inspect Core boundaries, target-write APIs reachable from refresh, excluded scop
 
 GPT-5 Codex
 
+### Implementation Plan
+
+- Add an immutable index-based catalog transformation before introducing orchestration.
+- Keep refresh sequencing and typed failures in Core, reusing lookup, validation, scanning, containment, and SaveIfUnchanged.
+- Append CLI injection seams, add explicit dispatch and deterministic output, then prove behavior through unit, conflict, safety, and real filesystem integration tests.
+
 ### Debug Log References
+
+- Task 1 red: focused catalog tests failed with CS1061 for the missing WithRefreshedBaseline API.
+- Task 1 green: 15 focused catalog tests and 192 full regression tests passed.
+- Task 2 red: focused tests failed for missing RefreshService and RefreshStatus production types.
+- Task 2 green: 8 focused refresh service tests and 200 full regression tests passed.
+- Task 3 red: focused CLI tests failed because CliRunner had no refresh injection or dispatch.
+- Task 3 green: 6 focused CLI refresh tests and 206 full regression tests passed.
+- Task 4: 13 focused concurrency/integration tests and 211 full regression tests passed.
+- Task 5: Release build passed with zero warnings/errors; 211 full and 94 focused Release tests passed; formatting, dependency, scope, boundary, and diff checks passed.
+- Code review patches: 2 focused regressions, 213 full Release tests, 96 focused Release tests, and formatting verification passed.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
+- Implemented immutable index-based baseline replacement with owned files, UTC refresh time, survivor preservation, and source immutability.
+- Implemented typed Core refresh orchestration with catalog validation, exact lookup, reliable scan gating, deterministic unreadables, one completion clock, containment protection, and one conflict-aware guarded save.
+- Wired explicit refresh CLI dispatch with exact two-line success output, sorted unreadable reporting, and V1 exit-code mapping while preserving existing constructor positions.
+- Added deterministic cross-writer conflict coverage for register, verify, unregister, refresh, and external edits plus real filesystem non-mutation and refresh-to-verify regression flows.
+- Completed all acceptance criteria without parser, schema, project, package, scanner, verification, DuplicateFinder, duplicates command, or target-file mutation changes.
+- Resolved all code-review findings: physical link containment, cryptographic scan-error mapping, and canonical story mirror synchronization.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/4-3-refresh-a-registered-folder-baseline.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 - docs/stories/story-014.md
+- src/FolderPrint.Core/Catalog/IntegrityCatalog.cs
+- tests/FolderPrint.Tests/Catalog/IntegrityCatalogTests.cs
+- src/FolderPrint.Core/Registration/RefreshResult.cs
+- src/FolderPrint.Core/Registration/RefreshService.cs
+- src/FolderPrint.Core/Registration/RefreshStatus.cs
+- src/FolderPrint.Core/Registration/RegistrationService.cs
+- tests/FolderPrint.Tests/Registration/RefreshServiceTests.cs
+- src/FolderPrint.Cli/CliRunner.cs
+- tests/FolderPrint.Tests/Cli/CliRefreshTests.cs
+- tests/FolderPrint.Tests/Cli/CliRefreshIntegrationTests.cs
+
+## Change Log
+
+- 2026-07-15: Implemented Story 4.3 refresh baseline support with conflict-aware persistence, deterministic CLI reporting, safety guarantees, and comprehensive automated coverage; moved to review.
+- 2026-07-15: Addressed all three code-review findings and moved Story 4.3 to done.

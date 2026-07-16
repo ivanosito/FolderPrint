@@ -1,6 +1,7 @@
 using FolderPrint.Core.Catalog;
 using FolderPrint.Core.Models;
 using FolderPrint.Core.Scanning;
+using System.Security.Cryptography;
 
 namespace FolderPrint.Core.Registration;
 
@@ -120,7 +121,10 @@ public sealed class RefreshService
         {
             snapshot = scanFolder(normalizedRootPath);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (
+            ex is IOException
+            or UnauthorizedAccessException
+            or CryptographicException)
         {
             return ScanFailure(normalizedRootPath, ex);
         }

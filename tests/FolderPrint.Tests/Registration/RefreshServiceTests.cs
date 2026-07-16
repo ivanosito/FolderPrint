@@ -224,6 +224,42 @@ public sealed class RefreshServiceTests : IDisposable
     }
 
     [Fact]
+    public void Refresh_LinkedRootResolvingOverCatalog_ReturnsCatalogErrorBeforeScan()
+    {
+        var physicalRoot = Directory.CreateDirectory(Path.Combine(tempDirectory, "physical-root")).FullName;
+        var linkedRoot = Path.Combine(tempDirectory, "linked-root");
+        try
+        {
+            Directory.CreateSymbolicLink(linkedRoot, physicalRoot);
+        }
+        catch (Exception ex) when (
+            ex is IOException
+            or UnauthorizedAccessException
+            or PlatformNotSupportedException)
+        {
+            return;
+        }
+
+        var store = new CatalogStore(Path.Combine(physicalRoot, ".folderprint", "catalog.json"));
+        Assert.True(store.Save(new IntegrityCatalog([Folder("target", linkedRoot, null)])).IsSuccess);
+        var original = File.ReadAllBytes(store.CatalogPath);
+        var scanCalls = 0;
+        var service = new RefreshService(
+            store,
+            _ =>
+            {
+                scanCalls++;
+                throw new InvalidOperationException("must not scan");
+            });
+
+        var result = service.Refresh(linkedRoot);
+
+        Assert.Equal(RefreshStatus.CatalogError, result.Status);
+        Assert.Equal(0, scanCalls);
+        Assert.Equal(original, File.ReadAllBytes(store.CatalogPath));
+    }
+
+    [Fact]
     public void Refresh_CatalogChangesBeforeSave_FailsWithoutOverwritingConcurrentState()
     {
         var root = Directory.CreateDirectory(Path.Combine(tempDirectory, "conflict-root")).FullName;

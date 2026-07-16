@@ -2,7 +2,7 @@
 storyId: '4.3'
 storyKey: '4-3-refresh-a-registered-folder-baseline'
 title: 'Refresh a Registered Folder Baseline'
-status: review
+status: done
 baseline_commit: 3c4cc0505fd8dc5f7920c0b20d3084d465812e64
 epic: 'Epic 4: Manage Registered Folders and Baselines'
 created: 2026-07-15
@@ -21,7 +21,7 @@ source:
 
 # Story 4.3: Refresh a Registered Folder Baseline
 
-Status: review
+Status: done
 
 ## Story
 
@@ -106,6 +106,12 @@ Standalone duplicates, DuplicateFinder, verification comparison or drift reporti
   - [x] Prove target tree, content, last-write data, and attributes remain unchanged, including catalog-inside-root.
   - [x] Add refresh and verify integration plus survivor command regressions.
 - [x] Run full validation and scope checks. (AC: 7, 9-12)
+
+### Review Findings
+
+- [x] [Review][Patch] Filesystem-link aliases can bypass catalog containment [src/FolderPrint.Core/Registration/RefreshService.cs:94]
+- [x] [Review][Patch] Hash-provider exceptions escape the typed scan-error contract [src/FolderPrint.Core/Registration/RefreshService.cs:116]
+- [x] [Review][Patch] Project story mirror remains stale at ready-for-dev [docs/stories/story-014.md:5]
 
 ## Dev Notes
 
@@ -205,6 +211,7 @@ GPT-5 Codex
 - Task 3 green: 6 focused CLI refresh tests and 206 full regression tests passed.
 - Task 4: 13 focused concurrency/integration tests and 211 full regression tests passed.
 - Task 5: Release build passed with zero warnings/errors; 211 full and 94 focused Release tests passed; formatting, dependency, scope, boundary, and diff checks passed.
+- Code review patches: 2 focused regressions, 213 full Release tests, 96 focused Release tests, and formatting verification passed.
 
 ### Completion Notes List
 
@@ -214,6 +221,7 @@ GPT-5 Codex
 - Wired explicit refresh CLI dispatch with exact two-line success output, sorted unreadable reporting, and V1 exit-code mapping while preserving existing constructor positions.
 - Added deterministic cross-writer conflict coverage for register, verify, unregister, refresh, and external edits plus real filesystem non-mutation and refresh-to-verify regression flows.
 - Completed all acceptance criteria without parser, schema, project, package, scanner, verification, DuplicateFinder, duplicates command, or target-file mutation changes.
+- Resolved all code-review findings: physical link containment, cryptographic scan-error mapping, and canonical story mirror synchronization.
 
 ### File List
 
@@ -234,3 +242,4 @@ GPT-5 Codex
 ## Change Log
 
 - 2026-07-15: Implemented Story 4.3 refresh baseline support with conflict-aware persistence, deterministic CLI reporting, safety guarantees, and comprehensive automated coverage; moved to review.
+- 2026-07-15: Addressed all three code-review findings and moved Story 4.3 to done.

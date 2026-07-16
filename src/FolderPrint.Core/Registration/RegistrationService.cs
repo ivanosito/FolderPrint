@@ -185,10 +185,69 @@ public sealed class RegistrationService
 
     internal static bool IsPathInsideRoot(string path, string rootPath)
     {
+        if (IsLexicallyInsideRoot(path, rootPath))
+        {
+            return true;
+        }
+
+        var resolvedPath = ResolveExistingLinks(path);
+        var resolvedRootPath = ResolveExistingLinks(rootPath);
+        return IsLexicallyInsideRoot(resolvedPath, resolvedRootPath);
+    }
+
+    private static bool IsLexicallyInsideRoot(string path, string rootPath)
+    {
         var rootWithSeparator = Path.EndsInDirectorySeparator(rootPath)
             ? rootPath
             : rootPath + Path.DirectorySeparatorChar;
         return path.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolveExistingLinks(string path)
+    {
+        var fullPath = Path.GetFullPath(path);
+        try
+        {
+            var pathRoot = Path.GetPathRoot(fullPath);
+            if (string.IsNullOrEmpty(pathRoot))
+            {
+                return fullPath;
+            }
+
+            var current = pathRoot;
+            var segments = fullPath[pathRoot.Length..]
+                .Split(
+                    [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+                    StringSplitOptions.RemoveEmptyEntries);
+            foreach (var segment in segments)
+            {
+                current = Path.Combine(current, segment);
+                FileSystemInfo entry = Directory.Exists(current)
+                    ? new DirectoryInfo(current)
+                    : new FileInfo(current);
+                if (!entry.Exists || (entry.Attributes & FileAttributes.ReparsePoint) == 0)
+                {
+                    continue;
+                }
+
+                var target = entry.ResolveLinkTarget(returnFinalTarget: true);
+                if (target is not null)
+                {
+                    current = target.FullName;
+                }
+            }
+
+            return Path.TrimEndingDirectorySeparator(Path.GetFullPath(current));
+        }
+        catch (Exception ex) when (
+            ex is IOException
+            or UnauthorizedAccessException
+            or ArgumentException
+            or NotSupportedException
+            or PathTooLongException)
+        {
+            return fullPath;
+        }
     }
 
     private static RegistrationResult InvalidRoot(string normalizedRootPath) =>

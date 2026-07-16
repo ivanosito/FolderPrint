@@ -1,6 +1,7 @@
 using FolderPrint.Cli;
 using FolderPrint.Core.Catalog;
 using FolderPrint.Core.Models;
+using System.Security.Cryptography;
 
 namespace FolderPrint.Tests.Cli;
 
@@ -139,6 +140,23 @@ public sealed class CliRefreshTests : IDisposable
         fixture.Save(new IntegrityCatalog([Folder("target", root, null)]));
         var original = File.ReadAllBytes(fixture.CatalogPath);
         fixture.SetRunner(_ => throw new IOException("scan broke"));
+
+        var exitCode = fixture.Runner.Run(["refresh", root]);
+
+        Assert.Equal(ExitCodes.ScanError, exitCode);
+        Assert.Equal(string.Empty, fixture.Output.ToString());
+        Assert.Contains("scan failed", fixture.Error.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(original, File.ReadAllBytes(fixture.CatalogPath));
+    }
+
+    [Fact]
+    public void Run_HashProviderFailure_ReturnsScanErrorAndPreservesCatalog()
+    {
+        var root = Directory.CreateDirectory(Path.Combine(tempDirectory, "hash-root")).FullName;
+        var fixture = CreateFixture("hash");
+        fixture.Save(new IntegrityCatalog([Folder("target", root, null)]));
+        var original = File.ReadAllBytes(fixture.CatalogPath);
+        fixture.SetRunner(_ => throw new CryptographicException("hash provider failed"));
 
         var exitCode = fixture.Runner.Run(["refresh", root]);
 
