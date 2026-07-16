@@ -53,8 +53,8 @@ development_status:
   4-2-unregister-a-folder: done
   4-3-refresh-a-registered-folder-baseline: done
   epic-4-retrospective: done
-  epic-5: backlog
-  5-1-implement-duplicatefinder-for-current-snapshots: backlog
+  epic-5: in-progress
+  5-1-implement-duplicatefinder-for-current-snapshots: ready-for-dev
   5-2-wire-duplicates-folder-command: backlog
   epic-5-retrospective: optional
 
