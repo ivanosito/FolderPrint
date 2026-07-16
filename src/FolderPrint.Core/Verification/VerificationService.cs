@@ -4,6 +4,8 @@ namespace FolderPrint.Core.Verification;
 
 public sealed class VerificationService
 {
+    private static readonly DuplicateFinder DuplicateFinder = new();
+
     public VerificationResult Compare(RegisteredFolder baseline, FolderSnapshot current)
     {
         ArgumentNullException.ThrowIfNull(baseline);
@@ -62,48 +64,12 @@ public sealed class VerificationService
             .ThenBy(change => change.CurrentRelativePath, StringComparer.Ordinal)
             .ToArray();
 
-        var duplicateGroups = CreateDuplicateGroups(currentFiles);
+        var duplicateGroups = DuplicateFinder.Find(current);
         var unreadableFiles = current.UnreadableFiles.OrderBy(path => path, StringComparer.Ordinal).ToArray();
 
         return new VerificationResult(baseline.RootPath, current.ScannedAtUtc, changes, duplicateGroups, unreadableFiles);
     }
 
-    private static IReadOnlyList<IReadOnlyList<string>> CreateDuplicateGroups(
-        IReadOnlyList<FileFingerprint> currentFiles) =>
-        currentFiles.GroupBy(file => file.Sha256, StringComparer.Ordinal)
-            .Select(group => new
-            {
-                FingerprintCount = group.Count(),
-                Paths = group.Select(file => file.RelativePath)
-                    .Distinct(StringComparer.Ordinal)
-                    .OrderBy(path => path, StringComparer.Ordinal)
-                    .ToArray()
-            })
-            .Where(group => group.FingerprintCount >= 2)
-            .OrderBy(group => group.Paths[0], StringComparer.Ordinal)
-            .ThenBy(group => (IReadOnlyList<string>)group.Paths, OrdinalPathSequenceComparer)
-            .Select(group => (IReadOnlyList<string>)group.Paths)
-            .ToArray();
-
-    private static readonly IComparer<IReadOnlyList<string>> OrdinalPathSequenceComparer =
-        Comparer<IReadOnlyList<string>>.Create(ComparePathSequences);
-
-    private static int ComparePathSequences(IReadOnlyList<string>? left, IReadOnlyList<string>? right)
-    {
-        ArgumentNullException.ThrowIfNull(left);
-        ArgumentNullException.ThrowIfNull(right);
-
-        for (var index = 0; index < Math.Min(left.Count, right.Count); index++)
-        {
-            var comparison = StringComparer.Ordinal.Compare(left[index], right[index]);
-            if (comparison != 0)
-            {
-                return comparison;
-            }
-        }
-
-        return left.Count.CompareTo(right.Count);
-    }
     private static IEnumerable<FileChange> ReconcileUnmatched(
         IReadOnlyList<FileFingerprint> baselineFiles,
         IReadOnlyList<FileFingerprint> currentFiles)

@@ -2,7 +2,7 @@
 storyId: '5.1'
 storyKey: '5-1-implement-duplicatefinder-for-current-snapshots'
 title: 'Implement DuplicateFinder for Current Snapshots'
-status: ready-for-dev
+status: review
 baseline_commit: 63ad449606908d103fbb7d2c74b2f3aff0bac85a
 epic: 'Epic 5: Find Duplicate Files On Demand'
 created: 2026-07-16
@@ -20,7 +20,7 @@ source:
 
 # Story 5.1: Implement DuplicateFinder for Current Snapshots
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -79,24 +79,24 @@ Do not order by hash, current culture, filesystem order, or LINQ source order. D
 
 ## Tasks / Subtasks
 
-- [ ] Add pure Core `DuplicateFinder`. (AC: 1-8, 10)
-  - [ ] Create `Verification/DuplicateFinder.cs` with `Find(FolderSnapshot)`.
-  - [ ] Move the existing grouping and path-sequence comparison from `VerificationService`.
-  - [ ] Keep it stateless and free of I/O, scanning, hashing, catalog, CLI, writer, clock, and environment seams.
-- [ ] Make verification consume one implementation. (AC: 7, 9)
-  - [ ] Delegate current-snapshot grouping to `DuplicateFinder`.
-  - [ ] Remove the moved private helper/comparer from `VerificationService`.
-  - [ ] Preserve parameterless use and the public `Compare` signature; add no breaking constructor.
-- [ ] Add `DuplicateFinderTests`. (AC: 1-8)
-  - [ ] Cover null, empty, singleton, two-file, 3+ file, and multiple groups.
-  - [ ] Cover permutations, ordinal case/path order, nested paths, same-first-path and prefix tie-breaks.
-  - [ ] Cover metadata differences, unreadable-only, mixed input, and matching readable/unreadable path text.
-  - [ ] Pin repeated same-hash/same-path qualification and distinct projection.
-  - [ ] Prove defensive materialization and input-order preservation.
-- [ ] Preserve regressions and validate. (AC: 9-10)
-  - [ ] Keep verification tests for duplicate/unreadable separation, group ordering, repeated paths, ambiguity, materialization, and `HasDifferences`.
-  - [ ] Add only a narrow delegation regression if existing coverage is insufficient.
-  - [ ] Run full checks and inspect the diff for excluded files/features.
+- [x] Add pure Core `DuplicateFinder`. (AC: 1-8, 10)
+  - [x] Create `Verification/DuplicateFinder.cs` with `Find(FolderSnapshot)`.
+  - [x] Move the existing grouping and path-sequence comparison from `VerificationService`.
+  - [x] Keep it stateless and free of I/O, scanning, hashing, catalog, CLI, writer, clock, and environment seams.
+- [x] Make verification consume one implementation. (AC: 7, 9)
+  - [x] Delegate current-snapshot grouping to `DuplicateFinder`.
+  - [x] Remove the moved private helper/comparer from `VerificationService`.
+  - [x] Preserve parameterless use and the public `Compare` signature; add no breaking constructor.
+- [x] Add `DuplicateFinderTests`. (AC: 1-8)
+  - [x] Cover null, empty, singleton, two-file, 3+ file, and multiple groups.
+  - [x] Cover permutations, ordinal case/path order, nested paths, same-first-path and prefix tie-breaks.
+  - [x] Cover metadata differences, unreadable-only, mixed input, and matching readable/unreadable path text.
+  - [x] Pin repeated same-hash/same-path qualification and distinct projection.
+  - [x] Prove defensive materialization and input-order preservation.
+- [x] Preserve regressions and validate. (AC: 9-10)
+  - [x] Keep verification tests for duplicate/unreadable separation, group ordering, repeated paths, ambiguity, materialization, and `HasDifferences`.
+  - [x] Add only a narrow delegation regression if existing coverage is insufficient.
+  - [x] Run full checks and inspect the diff for excluded files/features.
 
 ## Dev Notes
 
@@ -196,14 +196,35 @@ Inspect the changed finder for CLI, console, scanner, hasher, catalog, filesyste
 
 GPT-5 Codex
 
+### Implementation Plan
+
+- Add focused in-memory tests first and confirm the missing-service failure.
+- Move the existing verification grouping algorithm into a stateless `DuplicateFinder`.
+- Delegate verification to the shared service, then run focused and full validation.
+
 ### Debug Log References
+
+- Red: focused build failed with CS0246 because `DuplicateFinder` did not exist.
+- Green: 35 focused `DuplicateFinder` and `VerificationService` tests passed.
+- Validation: Release build passed with zero warnings/errors; all 221 tests and formatting checks passed.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
+- Implemented a pure snapshot-to-groups Core `DuplicateFinder` using ordinal hash equality, distinct ordinal paths, lexicographic path-sequence ordering, and defensive materialization.
+- Moved duplicate grouping out of `VerificationService` and delegated to the shared service without changing verification results or public APIs.
+- Added eight focused in-memory tests covering null, empty/singleton, multi-group, ordinal/prefix order, metadata independence, unreadable exclusion, repeated-path compatibility, and input/result materialization.
+- Verified Core remains free of CLI, scanning, hashing, filesystem, catalog, and runtime package dependencies; no CLI command was wired.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/5-1-implement-duplicatefinder-for-current-snapshots.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 - docs/stories/story-015.md
+- src/FolderPrint.Core/Verification/DuplicateFinder.cs
+- src/FolderPrint.Core/Verification/VerificationService.cs
+- tests/FolderPrint.Tests/Verification/DuplicateFinderTests.cs
+
+## Change Log
+
+- 2026-07-16: Implemented deterministic current-snapshot duplicate grouping, verification delegation, and focused Core tests; moved story to review.
