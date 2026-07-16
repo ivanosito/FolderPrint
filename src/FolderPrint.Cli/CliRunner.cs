@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using FolderPrint.Core.Catalog;
 using FolderPrint.Core.Models;
 using FolderPrint.Core.Registration;
@@ -15,6 +16,8 @@ public sealed class CliRunner
     private readonly RefreshService refreshService;
     private readonly Func<string, FolderSnapshot> scanFolderForVerification;
     private readonly Func<RegisteredFolder, FolderSnapshot, VerificationResult> compareFolders;
+    private readonly Func<string, FolderSnapshot> scanFolderForDuplicates;
+    private readonly Func<FolderSnapshot, IReadOnlyList<IReadOnlyList<string>>> findDuplicates;
     private readonly TextWriter output;
     private readonly TextWriter error;
 
@@ -25,7 +28,9 @@ public sealed class CliRunner
         Func<string, FolderSnapshot>? verificationScan = null,
         Func<RegisteredFolder, FolderSnapshot, VerificationResult>? verificationCompare = null,
         Func<string, FolderSnapshot>? refreshScan = null,
-        Func<DateTimeOffset>? refreshClock = null)
+        Func<DateTimeOffset>? refreshClock = null,
+        Func<string, FolderSnapshot>? duplicateScan = null,
+        Func<FolderSnapshot, IReadOnlyList<IReadOnlyList<string>>>? duplicateFind = null)
     {
         this.catalogStore = catalogStore ?? new CatalogStore(new CatalogPathProvider().GetCatalogPath());
         var folderScanner = new FolderScanner(new FileHasher());
@@ -37,6 +42,8 @@ public sealed class CliRunner
             refreshClock);
         scanFolderForVerification = verificationScan ?? folderScanner.Scan;
         compareFolders = verificationCompare ?? new VerificationService().Compare;
+        scanFolderForDuplicates = duplicateScan ?? folderScanner.Scan;
+        findDuplicates = duplicateFind ?? new DuplicateFinder().Find;
         this.output = output ?? Console.Out;
         this.error = error ?? Console.Error;
     }
@@ -60,6 +67,7 @@ public sealed class CliRunner
                 CommandKind.Unregister => RunUnregister(result.Command.FolderPath!),
                 CommandKind.Verify => RunVerify(result.Command.FolderPath!),
                 CommandKind.Refresh => RunRefresh(result.Command.FolderPath!),
+                CommandKind.Duplicates => RunDuplicates(result.Command.FolderPath!),
                 _ => result.ExitCode
             };
         }
@@ -68,6 +76,69 @@ public sealed class CliRunner
             error.WriteLine("Unexpected error.");
             return ExitCodes.UnexpectedError;
         }
+    }
+
+    private int RunDuplicates(string requestedRootPath)
+    {
+        string normalizedRootPath;
+        try
+        {
+            normalizedRootPath = RegistrationService.NormalizeRootPath(requestedRootPath);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            error.WriteLine("Folder path is invalid.");
+            return ExitCodes.NotFound;
+        }
+
+        var rootValidation = ValidateVerificationRoot(normalizedRootPath);
+        if (rootValidation != ExitCodes.Success)
+        {
+            return rootValidation;
+        }
+
+        FolderSnapshot snapshot;
+        try
+        {
+            snapshot = scanFolderForDuplicates(normalizedRootPath);
+        }
+        catch (FileNotFoundException)
+        {
+            return ClassifyScanFailure(normalizedRootPath);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return ClassifyScanFailure(normalizedRootPath);
+        }
+        catch (IOException)
+        {
+            return ClassifyScanFailure(normalizedRootPath);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or CryptographicException)
+        {
+            error.WriteLine("Folder scan failed.");
+            return ExitCodes.ScanError;
+        }
+
+        if (snapshot.UnreadableFiles.Count > 0)
+        {
+            error.WriteLine("Folder duplicate scan failed because one or more files could not be read.");
+            foreach (var unreadableFile in snapshot.UnreadableFiles.OrderBy(path => path, StringComparer.Ordinal))
+            {
+                error.WriteLine($"Unreadable: {unreadableFile}");
+            }
+
+            return ExitCodes.ScanError;
+        }
+
+        var duplicateGroups = findDuplicates(snapshot);
+        var lines = ReportFormatter.FormatDuplicates(normalizedRootPath, duplicateGroups);
+        foreach (var line in lines)
+        {
+            output.WriteLine(line);
+        }
+
+        return ExitCodes.Success;
     }
 
     private int RunVerify(string requestedRootPath)

@@ -89,6 +89,45 @@ public sealed class ReportFormatterTests
         Assert.Contains("  same.txt", lines);
     }
 
+    [Fact]
+    public void FormatDuplicates_NoGroups_ReturnsMaterializedExplicitMessage()
+    {
+        var groups = new List<IReadOnlyList<string>>();
+
+        var lines = ReportFormatter.FormatDuplicates("C:\\Data", groups);
+        groups.Add(["later-a.txt", "later-b.txt"]);
+
+        Assert.Equal(["Duplicates: C:\\Data", "No duplicates found."], lines);
+    }
+
+    [Fact]
+    public void FormatDuplicates_Groups_PreservesSuppliedOrderAndMaterializesLines()
+    {
+        var first = new List<string> { "z.txt", "a.txt" };
+        var second = new List<string> { "nested/c.txt", "nested/a.txt", "nested/b.txt" };
+        var groups = new List<IReadOnlyList<string>> { first, second };
+
+        var lines = ReportFormatter.FormatDuplicates("C:\\Data", groups);
+        first.Clear();
+        second.Reverse();
+        groups.Clear();
+
+        Assert.Equal(
+            [
+                "Duplicates: C:\\Data",
+                "Duplicate groups: 2",
+                "[Duplicate Groups]",
+                "Group 1:",
+                "  z.txt",
+                "  a.txt",
+                "Group 2:",
+                "  nested/c.txt",
+                "  nested/a.txt",
+                "  nested/b.txt"
+            ],
+            lines);
+    }
+
     private static VerificationResult Result(
         IReadOnlyList<FileChange> changes,
         IReadOnlyList<IReadOnlyList<string>>? duplicates = null,

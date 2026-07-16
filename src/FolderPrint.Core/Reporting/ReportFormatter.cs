@@ -46,6 +46,31 @@ public static class ReportFormatter
         return lines.ToArray();
     }
 
+    public static IReadOnlyList<string> FormatDuplicates(
+        string rootPath,
+        IReadOnlyList<IReadOnlyList<string>> duplicateGroups)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(rootPath);
+        ArgumentNullException.ThrowIfNull(duplicateGroups);
+
+        var lines = new List<string> { $"Duplicates: {rootPath}" };
+        if (duplicateGroups.Count == 0)
+        {
+            lines.Add("No duplicates found.");
+            return lines.ToArray();
+        }
+
+        lines.Add($"Duplicate groups: {duplicateGroups.Count.ToString(CultureInfo.InvariantCulture)}");
+        lines.Add("[Duplicate Groups]");
+        for (var index = 0; index < duplicateGroups.Count; index++)
+        {
+            lines.Add($"Group {(index + 1).ToString(CultureInfo.InvariantCulture)}:");
+            lines.AddRange(duplicateGroups[index].Select(path => $"  {path}"));
+        }
+
+        return lines.ToArray();
+    }
+
     public static IReadOnlyList<string> FormatVerification(VerificationResult result)
     {
         ArgumentNullException.ThrowIfNull(result);

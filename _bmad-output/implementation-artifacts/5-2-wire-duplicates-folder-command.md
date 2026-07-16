@@ -2,7 +2,7 @@
 storyId: '5.2'
 storyKey: '5-2-wire-duplicates-folder-command'
 title: 'Wire duplicates <folder> Command'
-status: ready-for-dev
+status: review
 baseline_commit: 4ee8ea76db649a9185d733aab838213f4a8b2589
 epic: 'Epic 5: Find Duplicate Files On Demand'
 created: 2026-07-16
@@ -22,7 +22,7 @@ source:
 
 # Story 5.2: Wire `duplicates <folder>` Command
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -30,7 +30,7 @@ As a CLI user, I want to run duplicate detection for any existing folder, so tha
 
 ## Gate Decision
 
-**GO — 2026-07-16.** Story 5.1 is `done` after adversarial review with every finding resolved. Its artifact records 36 focused and 222 full Release tests plus clean build, formatting, dependency, boundary, excluded-scope, and diff checks. `DuplicateFinder` is the reviewed pure, deterministic grouping authority and verification remains compatible. The user explicitly initiated this gated-stretch create-story workflow after the Sprint 008 status check, satisfying the remaining-capacity decision.
+**GO - 2026-07-16.** Story 5.1 is `done` after adversarial review with every finding resolved. Its artifact records 36 focused and 222 full Release tests plus clean build, formatting, dependency, boundary, excluded-scope, and diff checks. `DuplicateFinder` is the reviewed pure, deterministic grouping authority and verification remains compatible. The user explicitly initiated this gated-stretch create-story workflow after the Sprint 008 status check, satisfying the remaining-capacity decision.
 
 The Epic 4 catalog-independence action stays open until Story 5.2 implementation and review provide direct proof; creating this artifact does not close it.
 
@@ -83,26 +83,26 @@ The intended flow is `CLI validation -> FolderScanner -> FolderSnapshot -> Dupli
 
 ## Tasks / Subtasks
 
-- [ ] Wire duplicate orchestration in `CliRunner`. (AC: 1-3, 7-10, 12)
-  - [ ] Add the missing `CommandKind.Duplicates` switch arm.
-  - [ ] Append optional duplicate-scan and duplicate-find seams after every existing constructor parameter so callers remain compatible.
-  - [ ] Default them to the existing `FolderScanner.Scan` and `new DuplicateFinder().Find` methods.
-  - [ ] Add `RunDuplicates`; reuse or narrowly generalize root validation/failure helpers without changing verify.
-  - [ ] Scan once, reject unreadables before finder, find once, materialize formatter lines, then write.
-- [ ] Add deterministic duplicate reporting. (AC: 4-6, 12)
-  - [ ] Add a focused `ReportFormatter` method accepting normalized root and typed groups.
-  - [ ] Emit the pinned shapes and preserve supplied nested group/path order.
-  - [ ] Keep it pure and writer-free; do not fabricate a `VerificationResult` or new model.
-- [ ] Add Story 5.2 tests. (AC: 1-12)
-  - [ ] Cover real-scanner duplicates, 3+ files, multiple/nested groups, none, and empty folder.
-  - [ ] Cover malformed/missing/file roots, root disappearance, traversal/IO/access/hash failures, unreadable-only, and mixed snapshots.
-  - [ ] Assert rejected targets call neither seam; success scans/finds once; unreadables never call finder; no failure emits partial stdout.
-  - [ ] Prove missing/malformed/inaccessible catalog independence, sentinel-byte preservation on success and one representative failure, and identical behavior for a registered folder.
-  - [ ] Prove target-tree read-only behavior and add formatter order/materialization tests.
-- [ ] Preserve regressions and validate. (AC: 12)
-  - [ ] Run focused duplicate CLI/reporting tests and existing parser, scanner, finder, verification, and command tests.
-  - [ ] Run full Release build/tests, formatting, dependency, boundary, excluded-scope, catalog/target safety, and diff checks.
-  - [ ] Keep catalog, registration, finder, verification, parser, enum, exit, model, project, and package files unchanged unless a documented compatibility failure requires otherwise.
+- [x] Wire duplicate orchestration in `CliRunner`. (AC: 1-3, 7-10, 12)
+  - [x] Add the missing `CommandKind.Duplicates` switch arm.
+  - [x] Append optional duplicate-scan and duplicate-find seams after every existing constructor parameter so callers remain compatible.
+  - [x] Default them to the existing `FolderScanner.Scan` and `new DuplicateFinder().Find` methods.
+  - [x] Add `RunDuplicates`; reuse or narrowly generalize root validation/failure helpers without changing verify.
+  - [x] Scan once, reject unreadables before finder, find once, materialize formatter lines, then write.
+- [x] Add deterministic duplicate reporting. (AC: 4-6, 12)
+  - [x] Add a focused `ReportFormatter` method accepting normalized root and typed groups.
+  - [x] Emit the pinned shapes and preserve supplied nested group/path order.
+  - [x] Keep it pure and writer-free; do not fabricate a `VerificationResult` or new model.
+- [x] Add Story 5.2 tests. (AC: 1-12)
+  - [x] Cover real-scanner duplicates, 3+ files, multiple/nested groups, none, and empty folder.
+  - [x] Cover malformed/missing/file roots, root disappearance, traversal/IO/access/hash failures, unreadable-only, and mixed snapshots.
+  - [x] Assert rejected targets call neither seam; success scans/finds once; unreadables never call finder; no failure emits partial stdout.
+  - [x] Prove missing/malformed/inaccessible catalog independence, sentinel-byte preservation on success and one representative failure, and identical behavior for a registered folder.
+  - [x] Prove target-tree read-only behavior and add formatter order/materialization tests.
+- [x] Preserve regressions and validate. (AC: 12)
+  - [x] Run focused duplicate CLI/reporting tests and existing parser, scanner, finder, verification, and command tests.
+  - [x] Run full Release build/tests, formatting, dependency, boundary, excluded-scope, catalog/target safety, and diff checks.
+  - [x] Keep catalog, registration, finder, verification, parser, enum, exit, model, project, and package files unchanged unless a documented compatibility failure requires otherwise.
 
 ## Dev Notes
 
@@ -219,19 +219,39 @@ Also inspect the diff for Core references to `System.Console|FolderPrint.Cli|Exi
 
 GPT-5 Codex
 
+### Implementation Plan
+
+- Add failing CLI and reporting tests for dispatch, deterministic output, reliability failures, catalog independence, and target safety.
+- Append test seams and implement one scan-to-finder CLI path without catalog operations.
+- Add pure materialized duplicate formatting, then run focused and full validation.
+
 ### Debug Log References
+
+- Red: focused build failed with CS1739 for missing duplicate seams and CS0117 for missing `FormatDuplicates`.
+- Green: 20 focused CLI/reporting tests passed after minimal production implementation.
+- Final validation: 28 focused tests and all 238 Release tests passed; Release build had zero warnings/errors.
+- Formatting, Core reference/package, boundary, excluded-scope, catalog-safety, target-safety, and diff checks passed.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Sprint 008 Story 5.2 gate recorded as GO after reviewed Story 5.1 completion and explicit stretch-capacity authorization.
+- Wired `duplicates <folder>` to validate and scan one current folder, fail closed on unreliable scans, call the existing `DuplicateFinder`, and return established V1 exits.
+- Added pure deterministic duplicate/no-duplicate formatting without changing grouping semantics or Core/CLI dependency direction.
+- Added real scanner/finder integration and focused tests for multiple/3+ groups, empty/singleton folders, invalid targets, unreadables, scan/crypto failures, unexpected failures, catalog independence, and target safety.
+- Preserved parser, exit-code, scanner, finder, verification, catalog, registration, model, project, and package behavior.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/5-2-wire-duplicates-folder-command.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 - docs/stories/story-016.md
+- src/FolderPrint.Cli/CliRunner.cs
+- src/FolderPrint.Core/Reporting/ReportFormatter.cs
+- tests/FolderPrint.Tests/Cli/CliDuplicatesTests.cs
+- tests/FolderPrint.Tests/Reporting/ReportFormatterTests.cs
 
 ## Change Log
 
 - 2026-07-16: Created implementation-ready Story 5.2 artifact and opened the gated stretch story for development.
+- 2026-07-16: Implemented deterministic `duplicates <folder>` CLI orchestration, reporting, error mapping, and automated coverage; moved story to review.
