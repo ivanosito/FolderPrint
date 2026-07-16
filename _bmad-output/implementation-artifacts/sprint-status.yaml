@@ -56,7 +56,7 @@ development_status:
   epic-5: done
   5-1-implement-duplicatefinder-for-current-snapshots: done
   5-2-wire-duplicates-folder-command: done
-  epic-5-retrospective: optional
+  epic-5-retrospective: done
 
 action_items:
   - epic: 3
@@ -75,3 +75,7 @@ action_items:
     action: "Keep Story 5.2 gated until Story 5.1 is done and reviewed; prove the CLI command works without registration or catalog access and preserves the Core/CLI boundary."
     owner: "Developer/Reviewer"
     status: done
+  - epic: 5
+    action: "Run and document the FolderPrint V1 final readiness check, including acceptance traceability, clean-environment smoke checks, release documentation, carried-risk disposition, and stakeholder/release decision."
+    owner: "Product/Developer/QA"
+    status: open
