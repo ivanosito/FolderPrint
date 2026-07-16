@@ -64,7 +64,7 @@ public sealed class VerificationService
             .ThenBy(change => change.CurrentRelativePath, StringComparer.Ordinal)
             .ToArray();
 
-        var duplicateGroups = DuplicateFinder.Find(current);
+        var duplicateGroups = DuplicateFinder.Find(current with { Files = currentFiles });
         var unreadableFiles = current.UnreadableFiles.OrderBy(path => path, StringComparer.Ordinal).ToArray();
 
         return new VerificationResult(baseline.RootPath, current.ScannedAtUtc, changes, duplicateGroups, unreadableFiles);

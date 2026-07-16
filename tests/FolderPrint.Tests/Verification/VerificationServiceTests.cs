@@ -1,3 +1,4 @@
+using System.Collections;
 using FolderPrint.Core.Models;
 using FolderPrint.Core.Verification;
 
@@ -342,6 +343,23 @@ public sealed class VerificationServiceTests
         Assert.Equal(["a.locked", "z.locked"], result.UnreadableFiles);
     }
 
+    [Fact]
+    public void Compare_ChangingSnapshotFiles_UsesOneMaterializedStateForChangesAndDuplicates()
+    {
+        var firstState = new[]
+        {
+            Fingerprint("b.txt", "shared"),
+            Fingerprint("a.txt", "shared")
+        };
+        var laterState = new[] { Fingerprint("different.txt", "different") };
+        var snapshot = Snapshot(new ChangingReadOnlyList<FileFingerprint>(firstState, laterState));
+
+        var result = new VerificationService().Compare(Baseline([]), snapshot);
+
+        Assert.Equal(["a.txt", "b.txt"], result.Changes.Select(ChangePath));
+        Assert.Equal(["a.txt", "b.txt"], Assert.Single(result.DuplicateGroups));
+    }
+
     private static VerificationResult Compare(
         IReadOnlyList<FileFingerprint> baselineFiles,
         IReadOnlyList<FileFingerprint> currentFiles) =>
@@ -364,4 +382,20 @@ public sealed class VerificationServiceTests
 
     private static string ChangePath(FileChange change) =>
         change.CurrentRelativePath ?? change.BaselineRelativePath!;
+
+    private sealed class ChangingReadOnlyList<T>(
+        IReadOnlyList<T> firstEnumeration,
+        IReadOnlyList<T> laterEnumerations) : IReadOnlyList<T>
+    {
+        private int enumerationCount;
+
+        public int Count => firstEnumeration.Count;
+
+        public T this[int index] => firstEnumeration[index];
+
+        public IEnumerator<T> GetEnumerator() =>
+            (enumerationCount++ == 0 ? firstEnumeration : laterEnumerations).GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
 }

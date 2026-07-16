@@ -28,9 +28,9 @@ public sealed class DuplicateFinderTests
     {
         var files = new[]
         {
-            Fingerprint("z.txt", "hash-1"),
+            Fingerprint("z/nested.txt", "hash-1"),
             Fingerprint("c.txt", "hash-2"),
-            Fingerprint("a.txt", "hash-1"),
+            Fingerprint("a/nested.txt", "hash-1"),
             Fingerprint("b.txt", "hash-2"),
             Fingerprint("d.txt", "hash-2"),
             Fingerprint("single.txt", "hash-3")
@@ -41,7 +41,7 @@ public sealed class DuplicateFinderTests
 
         Assert.Collection(
             first,
-            group => Assert.Equal(["a.txt", "z.txt"], group),
+            group => Assert.Equal(["a/nested.txt", "z/nested.txt"], group),
             group => Assert.Equal(["b.txt", "c.txt", "d.txt"], group));
         Assert.Equal(first.Select(GroupArray), second.Select(GroupArray));
     }
@@ -76,8 +76,10 @@ public sealed class DuplicateFinderTests
     }
 
     [Fact]
-    public void Find_UnreadablesAreExcludedEvenWhenPathMatchesReadableFile()
+    public void Find_UnreadablesAreExcludedForUnreadableOnlyAndMatchingReadablePath()
     {
+        Assert.Empty(new DuplicateFinder().Find(Snapshot([], ["only.locked"])));
+
         var groups = new DuplicateFinder().Find(Snapshot(
             [Fingerprint("same.txt", "only-readable")],
             ["same.txt", "locked.txt"]));

@@ -2,7 +2,7 @@
 storyId: '5.1'
 storyKey: '5-1-implement-duplicatefinder-for-current-snapshots'
 title: 'Implement DuplicateFinder for Current Snapshots'
-status: review
+status: done
 baseline_commit: 63ad449606908d103fbb7d2c74b2f3aff0bac85a
 epic: 'Epic 5: Find Duplicate Files On Demand'
 created: 2026-07-16
@@ -20,7 +20,7 @@ source:
 
 # Story 5.1: Implement DuplicateFinder for Current Snapshots
 
-Status: review
+Status: done
 
 ## Story
 
@@ -97,6 +97,12 @@ Do not order by hash, current culture, filesystem order, or LINQ source order. D
   - [x] Keep verification tests for duplicate/unreadable separation, group ordering, repeated paths, ambiguity, materialization, and `HasDifferences`.
   - [x] Add only a narrow delegation regression if existing coverage is insufficient.
   - [x] Run full checks and inspect the diff for excluded files/features.
+
+### Review Findings
+
+- [x] [Review][Patch] Preserve one materialized current-file set when verification delegates to DuplicateFinder [src/FolderPrint.Core/Verification/VerificationService.cs:67]
+- [x] [Review][Patch] Add focused nested relative-path ordering coverage [tests/FolderPrint.Tests/Verification/DuplicateFinderTests.cs:28]
+- [x] [Review][Patch] Add focused unreadable-only snapshot coverage [tests/FolderPrint.Tests/Verification/DuplicateFinderTests.cs:79]
 
 ## Dev Notes
 
@@ -207,6 +213,7 @@ GPT-5 Codex
 - Red: focused build failed with CS0246 because `DuplicateFinder` did not exist.
 - Green: 35 focused `DuplicateFinder` and `VerificationService` tests passed.
 - Validation: Release build passed with zero warnings/errors; all 221 tests and formatting checks passed.
+- Code review patches: 36 focused tests and 222 full Release tests passed; build, formatting, dependency, boundary, and diff checks remained clean.
 
 ### Completion Notes List
 
@@ -215,6 +222,7 @@ GPT-5 Codex
 - Moved duplicate grouping out of `VerificationService` and delegated to the shared service without changing verification results or public APIs.
 - Added eight focused in-memory tests covering null, empty/singleton, multi-group, ordinal/prefix order, metadata independence, unreadable exclusion, repeated-path compatibility, and input/result materialization.
 - Verified Core remains free of CLI, scanning, hashing, filesystem, catalog, and runtime package dependencies; no CLI command was wired.
+- Resolved all three review findings by preserving one materialized verification file set and adding the missing nested-path and unreadable-only coverage.
 
 ### File List
 
@@ -224,7 +232,9 @@ GPT-5 Codex
 - src/FolderPrint.Core/Verification/DuplicateFinder.cs
 - src/FolderPrint.Core/Verification/VerificationService.cs
 - tests/FolderPrint.Tests/Verification/DuplicateFinderTests.cs
+- tests/FolderPrint.Tests/Verification/VerificationServiceTests.cs
 
 ## Change Log
 
 - 2026-07-16: Implemented deterministic current-snapshot duplicate grouping, verification delegation, and focused Core tests; moved story to review.
+- 2026-07-16: Addressed all code-review findings and moved Story 5.1 to done.

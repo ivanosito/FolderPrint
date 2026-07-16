@@ -54,7 +54,7 @@ development_status:
   4-3-refresh-a-registered-folder-baseline: done
   epic-4-retrospective: done
   epic-5: in-progress
-  5-1-implement-duplicatefinder-for-current-snapshots: review
+  5-1-implement-duplicatefinder-for-current-snapshots: done
   5-2-wire-duplicates-folder-command: backlog
   epic-5-retrospective: optional
 
@@ -70,7 +70,7 @@ action_items:
   - epic: 4
     action: "Pin deterministic duplicate-group membership, group ordering, path ordering, and unreadable exclusion in the Story 5.1 artifact and focused Core tests."
     owner: "Developer"
-    status: open
+    status: done
   - epic: 4
     action: "Keep Story 5.2 gated until Story 5.1 is done and reviewed; prove the CLI command works without registration or catalog access and preserves the Core/CLI boundary."
     owner: "Developer/Reviewer"
