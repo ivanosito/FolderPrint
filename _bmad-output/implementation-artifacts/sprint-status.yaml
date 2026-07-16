@@ -50,7 +50,7 @@ development_status:
   epic-3-retrospective: done
   epic-4: in-progress
   4-1-display-registered-folder-metadata: done
-  4-2-unregister-a-folder: review
+  4-2-unregister-a-folder: done
   4-3-refresh-a-registered-folder-baseline: backlog
   epic-4-retrospective: optional
   epic-5: backlog

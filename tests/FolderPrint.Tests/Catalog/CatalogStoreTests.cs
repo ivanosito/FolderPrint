@@ -69,6 +69,25 @@ public sealed class CatalogStoreTests
     }
 
     [Fact]
+    public void Load_WhenCatalogPathIsDirectory_ReturnsCatalogError()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var catalogPath = Directory.CreateDirectory(Path.Combine(root, "catalog.json")).FullName;
+
+            var result = new CatalogStore(catalogPath).Load();
+
+            Assert.False(result.IsSuccess);
+            Assert.Contains("read", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void Save_WhenParentAndCatalogAreMissing_CreatesValidCatalog()
     {
         var root = CreateTempDirectory();
@@ -341,6 +360,114 @@ public sealed class CatalogStoreTests
             Assert.True(guardedResult.IsSuccess);
             Assert.Equal("guarded", Assert.Single(initialStore.Load().Catalog!.RegisteredFolders).Id);
             Assert.Empty(Directory.GetFiles(root, "*.tmp"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SaveIfUnchanged_ExternalEditAtReplaceBoundary_ReturnsConflictAndPreservesExternalBytes()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var catalogPath = Path.Combine(root, "catalog.json");
+            var initialStore = new CatalogStore(catalogPath);
+            Assert.True(initialStore.Save(Catalog("original")).IsSuccess);
+            var version = initialStore.Load().Version;
+            var externalBytes = System.Text.Encoding.UTF8.GetBytes("""{"registeredFolders":[]}""");
+            var guardedStore = new CatalogStore(
+                catalogPath,
+                () => File.WriteAllBytes(catalogPath, externalBytes));
+
+            var result = guardedStore.SaveIfUnchanged(Catalog("replacement"), version);
+
+            Assert.False(result.IsSuccess);
+            Assert.Contains("changed", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(externalBytes, File.ReadAllBytes(catalogPath));
+            Assert.Empty(Directory.GetFiles(root, "*.tmp"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SaveIfUnchanged_WhenFilesystemMutationLockIsHeld_ReturnsFailureAndPreservesCatalog()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var catalogPath = Path.Combine(root, "catalog.json");
+            var store = new CatalogStore(catalogPath);
+            Assert.True(store.Save(Catalog("original")).IsSuccess);
+            var version = store.Load().Version;
+            var originalBytes = File.ReadAllBytes(catalogPath);
+            using var mutationLock = new FileStream(
+                catalogPath + ".lock",
+                FileMode.OpenOrCreate,
+                FileAccess.ReadWrite,
+                FileShare.None);
+
+            var result = new CatalogStore(catalogPath).SaveIfUnchanged(Catalog("replacement"), version);
+
+            Assert.False(result.IsSuccess);
+            Assert.Contains("modified", result.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(originalBytes, File.ReadAllBytes(catalogPath));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task SaveIfUnchanged_RealAndDirectoryAliasPaths_ShareMutationLock()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var realDirectory = Directory.CreateDirectory(Path.Combine(root, "real")).FullName;
+            var aliasDirectory = Path.Combine(root, "alias");
+            try
+            {
+                Directory.CreateSymbolicLink(aliasDirectory, realDirectory);
+            }
+            catch (Exception ex) when (
+                ex is IOException
+                or UnauthorizedAccessException
+                or PlatformNotSupportedException)
+            {
+                return;
+            }
+
+            var realPath = Path.Combine(realDirectory, "catalog.json");
+            var aliasPath = Path.Combine(aliasDirectory, "catalog.json");
+            var initialStore = new CatalogStore(realPath);
+            Assert.True(initialStore.Save(Catalog("original")).IsSuccess);
+            var version = initialStore.Load().Version;
+            using var atReplace = new ManualResetEventSlim();
+            using var continueReplace = new ManualResetEventSlim();
+            var guardedStore = new CatalogStore(
+                realPath,
+                () =>
+                {
+                    atReplace.Set();
+                    Assert.True(continueReplace.Wait(TimeSpan.FromSeconds(10)));
+                });
+
+            var guardedTask = Task.Run(() => guardedStore.SaveIfUnchanged(Catalog("guarded"), version));
+            Assert.True(atReplace.Wait(TimeSpan.FromSeconds(10)));
+            var aliasResult = await Task.Run(() => new CatalogStore(aliasPath).Save(Catalog("alias")));
+            continueReplace.Set();
+            var guardedResult = await guardedTask;
+
+            Assert.False(aliasResult.IsSuccess);
+            Assert.True(guardedResult.IsSuccess);
+            Assert.Equal("guarded", Assert.Single(initialStore.Load().Catalog!.RegisteredFolders).Id);
         }
         finally
         {

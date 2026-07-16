@@ -2,7 +2,7 @@
 storyId: "4.2"
 storyKey: "4-2-unregister-a-folder"
 title: "Unregister a Folder"
-status: review
+status: done
 baseline_commit: d34f419f9a5779afd4ba25ba848cf8e633fb2694
 epic: "Epic 4: Manage Registered Folders and Baselines"
 created: 2026-07-15
@@ -20,7 +20,7 @@ source:
 
 # Story 4.2: Unregister a Folder
 
-Status: review
+Status: done
 
 ## Story
 
@@ -100,6 +100,13 @@ Refresh, standalone duplicates, `DuplicateFinder`, scan, hash, verify, target-ro
   - [x] Cover concurrent add/update/remove, catalog appearance, store failure, no premature output, and no temp residue.
   - [x] Catch current silent-success fall-through; prove re-registration and survivor list/verify behavior.
 - [x] Run all validation and scope checks. (AC: 7-10)
+
+### Review Findings
+
+- [x] [Review][Patch] [High] Recheck the expected catalog version after temp serialization and immediately before replacement so an external edit at the replacement boundary is rejected and preserved [src/FolderPrint.Core/Catalog/CatalogStore.cs:92]
+- [x] [Review][Patch] [High] Replace the session-local, lexical-path mutex with filesystem-backed coordination shared across Windows sessions and path aliases [src/FolderPrint.Core/Catalog/CatalogStore.cs:174]
+- [x] [Review][Patch] [Medium] Read the catalog directly and treat only actual file/directory-not-found exceptions as an empty catalog; inaccessible or directory-valued catalog paths must be CatalogError [src/FolderPrint.Core/Catalog/CatalogStore.cs:32]
+- [x] [Review][Patch] [Low] Add a survivor regression proving list and verify retain surviving registration metadata and baseline behavior after another entry is unregistered [tests/FolderPrint.Tests/Cli/CliUnregisterTests.cs:151]
 
 ## Dev Notes
 
@@ -191,6 +198,7 @@ GPT-5 Codex
 - RED (CLI unregister): all 7 tests exposed the existing silent-success fall-through and missing catalog mutation/output mapping.
 - GREEN (CLI unregister): all 7 end-to-end tests passed after explicit dispatch and typed mapping.
 - Final validation: restore succeeded; Release build completed with 0 warnings and 0 errors; 71 focused tests and all 181 tests passed; formatting, dependency, boundary, excluded-scope, and diff checks passed.
+- Code-review validation: all 186 tests passed after external-edit, filesystem-lock, invalid catalog-path, path-alias, and survivor list/verify regressions; Release build, formatting, dependency, boundary, excluded-scope, target-access, and diff checks passed.
 
 ### Completion Notes List
 
@@ -200,6 +208,7 @@ GPT-5 Codex
 - Added typed Core unregistration that validates the whole catalog, reuses V1 path identity, removes exactly one match, and never accesses the target root.
 - Wired `unregister <folder>` with exact success output and V1 exit-code mapping; success is withheld until persistence completes.
 - Added 30 Story 4.2 regression cases, increasing the reviewed baseline from 151 to 181 tests without dependencies or excluded-scope features.
+- Code review replaced the session-local mutex with a filesystem sidecar lock, added a final pre-replace version check, corrected inaccessible catalog classification, and added 5 regression cases.
 
 ### File List
 
@@ -224,3 +233,4 @@ GPT-5 Codex
 
 - 2026-07-15: Created implementation-ready Story 4.2, defined shared guarded mutation, and moved it to ready-for-dev.
 - 2026-07-15: Implemented conflict-safe unregister, shared guarded persistence, deterministic CLI reporting, and 30 automated tests; moved Story 4.2 to review.
+- 2026-07-15: Applied all four code-review patches, passed 186 tests and quality checks, and marked Story 4.2 done.

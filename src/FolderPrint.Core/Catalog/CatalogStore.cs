@@ -1,5 +1,4 @@
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 
 namespace FolderPrint.Core.Catalog;
@@ -29,11 +28,6 @@ public sealed class CatalogStore
 
     public CatalogLoadResult Load()
     {
-        if (!File.Exists(catalogPath))
-        {
-            return CatalogLoadResult.Success(IntegrityCatalog.Empty);
-        }
-
         try
         {
             var bytes = File.ReadAllBytes(catalogPath);
@@ -44,6 +38,14 @@ public sealed class CatalogStore
             }
 
             return CatalogLoadResult.Success(catalog, ComputeVersion(bytes));
+        }
+        catch (FileNotFoundException)
+        {
+            return CatalogLoadResult.Success(IntegrityCatalog.Empty);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return CatalogLoadResult.Success(IntegrityCatalog.Empty);
         }
         catch (JsonException ex)
         {
@@ -69,17 +71,14 @@ public sealed class CatalogStore
 
         return WithMutationLock(() =>
         {
-            if (File.Exists(catalogPath))
+            var existingCatalog = Load();
+            if (!existingCatalog.IsSuccess)
             {
-                var existingCatalog = Load();
-                if (!existingCatalog.IsSuccess)
-                {
-                    return CatalogSaveResult.CatalogError(
-                        $"Catalog could not be written because the existing catalog is invalid or unreadable: {existingCatalog.ErrorMessage}");
-                }
+                return CatalogSaveResult.CatalogError(
+                    $"Catalog could not be written because the existing catalog is invalid or unreadable: {existingCatalog.ErrorMessage}");
             }
 
-            return WriteCatalog(catalog);
+            return WriteCatalog(catalog, null, verifyExpectedVersion: false);
         });
     }
 
@@ -102,11 +101,14 @@ public sealed class CatalogStore
                     "Catalog changed during the operation; the catalog was not updated.");
             }
 
-            return WriteCatalog(catalog);
+            return WriteCatalog(catalog, expectedVersion, verifyExpectedVersion: true);
         });
     }
 
-    private CatalogSaveResult WriteCatalog(IntegrityCatalog catalog)
+    private CatalogSaveResult WriteCatalog(
+        IntegrityCatalog catalog,
+        string? expectedVersion,
+        bool verifyExpectedVersion)
     {
         string? temporaryPath = null;
 
@@ -126,6 +128,22 @@ public sealed class CatalogStore
             }
 
             beforeReplace?.Invoke();
+            if (verifyExpectedVersion)
+            {
+                var finalState = Load();
+                if (!finalState.IsSuccess)
+                {
+                    return CatalogSaveResult.CatalogError(
+                        $"Catalog could not be written because the existing catalog is invalid or unreadable: {finalState.ErrorMessage}");
+                }
+
+                if (!StringComparer.Ordinal.Equals(finalState.Version, expectedVersion))
+                {
+                    return CatalogSaveResult.CatalogError(
+                        "Catalog changed during the operation; the catalog was not updated.");
+                }
+            }
+
             File.Move(temporaryPath, catalogPath, overwrite: true);
             temporaryPath = null;
             return CatalogSaveResult.Success();
@@ -166,25 +184,28 @@ public sealed class CatalogStore
 
     private CatalogSaveResult WithMutationLock(Func<CatalogSaveResult> operation)
     {
-        Mutex? mutex = null;
-        var lockTaken = false;
+        FileStream? mutationLock = null;
 
         try
         {
-            mutex = new Mutex(false, GetMutationMutexName());
-            try
+            var directory = Path.GetDirectoryName(catalogPath);
+            if (!string.IsNullOrEmpty(directory))
             {
-                lockTaken = mutex.WaitOne(0);
-            }
-            catch (AbandonedMutexException)
-            {
-                lockTaken = true;
+                Directory.CreateDirectory(directory);
             }
 
-            if (!lockTaken)
+            try
+            {
+                mutationLock = new FileStream(
+                    catalogPath + ".lock",
+                    FileMode.OpenOrCreate,
+                    FileAccess.ReadWrite,
+                    FileShare.None);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 return CatalogSaveResult.CatalogError(
-                    "Catalog is currently being modified by another FolderPrint operation.");
+                    $"Catalog could not be written because it is being modified or its mutation lock could not be acquired: {ex.Message}");
             }
 
             return operation();
@@ -200,25 +221,8 @@ public sealed class CatalogStore
         }
         finally
         {
-            if (lockTaken)
-            {
-                mutex!.ReleaseMutex();
-            }
-
-            mutex?.Dispose();
+            mutationLock?.Dispose();
         }
-    }
-
-    private string GetMutationMutexName()
-    {
-        var normalizedPath = Path.GetFullPath(catalogPath);
-        if (OperatingSystem.IsWindows())
-        {
-            normalizedPath = normalizedPath.ToUpperInvariant();
-        }
-
-        var pathHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalizedPath)));
-        return $"FolderPrint.Catalog.{pathHash}";
     }
 
     private static string ComputeVersion(byte[] bytes) =>

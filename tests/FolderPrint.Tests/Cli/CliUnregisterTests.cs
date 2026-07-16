@@ -164,6 +164,44 @@ public sealed class CliUnregisterTests : IDisposable
         Assert.Single(fixture.Store.Load().Catalog!.RegisteredFolders);
     }
 
+    [Fact]
+    public void Run_AfterUnregister_SurvivorListsAndVerifiesWithMetadataAndBaselinePreserved()
+    {
+        var fixture = CreateFixture("survivor-state");
+        var targetRoot = Path.Combine(tempDirectory, "remove-me");
+        var survivorRoot = Directory.CreateDirectory(Path.Combine(tempDirectory, "survivor")).FullName;
+        var survivor = Folder("survivor-id", survivorRoot, Created.AddHours(1));
+        fixture.Save(new IntegrityCatalog([
+            Folder("target-id", targetRoot, null),
+            survivor
+        ]));
+
+        Assert.Equal(ExitCodes.Success, fixture.Runner.Run(["unregister", targetRoot]));
+        fixture.Output.GetStringBuilder().Clear();
+        Assert.Equal(ExitCodes.Success, fixture.Runner.Run(["list"]));
+        Assert.Contains("Id: survivor-id", fixture.Output.ToString());
+        Assert.Contains($"Path: {survivorRoot}", fixture.Output.ToString());
+        Assert.Contains(
+            $"Last verified: {Created.AddHours(1).ToUniversalTime():O}",
+            fixture.Output.ToString());
+
+        fixture.Output.GetStringBuilder().Clear();
+        var scannedAt = Created.AddHours(2);
+        var verifyRunner = new CliRunner(
+            fixture.Store,
+            fixture.Output,
+            fixture.Error,
+            root => new FolderSnapshot(root, scannedAt, [], []));
+
+        Assert.Equal(ExitCodes.Success, verifyRunner.Run(["verify", survivorRoot]));
+        var persisted = Assert.Single(fixture.Store.Load().Catalog!.RegisteredFolders);
+        Assert.Equal("survivor-id", persisted.Id);
+        Assert.Equal(survivorRoot, persisted.RootPath);
+        Assert.Equal(Created, persisted.CreatedAtUtc);
+        Assert.Equal(scannedAt, persisted.LastVerifiedAtUtc);
+        Assert.Empty(persisted.Files);
+    }
+
     private Fixture CreateFixture(string stateName = "state") =>
         new(Path.Combine(tempDirectory, stateName, "catalog.json"));
 
