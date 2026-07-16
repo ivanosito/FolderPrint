@@ -106,6 +106,85 @@ public sealed class IntegrityCatalogTests
         Assert.Same(folder, Assert.Single(source.RegisteredFolders));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void WithRefreshedBaseline_FirstMiddleOrLast_ReplacesOnlySelectedIndex(int index)
+    {
+        var folders = new[]
+        {
+            Folder("first", "First"),
+            Folder("second", "Second"),
+            Folder("third", "Third")
+        };
+        var source = new IntegrityCatalog(folders);
+        var scannedAt = new DateTimeOffset(2026, 7, 15, 13, 0, 0, TimeSpan.Zero);
+        var files = new[]
+        {
+            new FileFingerprint("new.txt", new string('b', 64), 7, scannedAt)
+        };
+        var snapshot = new FolderSnapshot("ignored-snapshot-root", scannedAt, files, []);
+        var refreshedAt = new DateTimeOffset(2026, 7, 15, 8, 30, 0, TimeSpan.FromHours(-5));
+
+        var result = source.WithRefreshedBaseline(index, snapshot, refreshedAt);
+
+        Assert.NotSame(source.RegisteredFolders, result.RegisteredFolders);
+        Assert.Equal(folders, source.RegisteredFolders);
+        for (var current = 0; current < folders.Length; current++)
+        {
+            if (current != index)
+            {
+                Assert.Same(folders[current], result.RegisteredFolders[current]);
+            }
+        }
+
+        var refreshed = result.RegisteredFolders[index];
+        Assert.NotSame(folders[index], refreshed);
+        Assert.Equal(folders[index].Id, refreshed.Id);
+        Assert.Equal(folders[index].RootPath, refreshed.RootPath);
+        Assert.Equal(folders[index].CreatedAtUtc, refreshed.CreatedAtUtc);
+        Assert.Equal(refreshedAt.ToUniversalTime(), refreshed.LastVerifiedAtUtc);
+        Assert.Equal(files, refreshed.Files);
+        Assert.NotSame(files, refreshed.Files);
+
+        files[0] = new FileFingerprint("mutated.txt", new string('c', 64), 9, scannedAt);
+        Assert.Equal("new.txt", refreshed.Files[0].RelativePath);
+        Assert.NotEqual(refreshed.Files, folders[index].Files);
+    }
+
+    [Fact]
+    public void WithRefreshedBaseline_EmptySnapshotAndDuplicateIds_UpdatesOnlySelectedIndex()
+    {
+        var first = Folder("duplicate", "First");
+        var second = Folder("duplicate", "Second");
+        var source = new IntegrityCatalog([first, second]);
+        var refreshedAt = new DateTimeOffset(2026, 7, 15, 14, 0, 0, TimeSpan.Zero);
+        var snapshot = new FolderSnapshot(second.RootPath, refreshedAt, [], []);
+
+        var result = source.WithRefreshedBaseline(1, snapshot, refreshedAt);
+
+        Assert.Same(first, result.RegisteredFolders[0]);
+        Assert.Empty(result.RegisteredFolders[1].Files);
+        Assert.Equal(second.Id, result.RegisteredFolders[1].Id);
+        Assert.Single(second.Files);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(1)]
+    public void WithRefreshedBaseline_InvalidIndex_ThrowsWithoutMutation(int index)
+    {
+        var folder = Folder("only", "Only");
+        var source = new IntegrityCatalog([folder]);
+        var timestamp = new DateTimeOffset(2026, 7, 15, 14, 0, 0, TimeSpan.Zero);
+        var snapshot = new FolderSnapshot(folder.RootPath, timestamp, [], []);
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => source.WithRefreshedBaseline(index, snapshot, timestamp));
+        Assert.Same(folder, Assert.Single(source.RegisteredFolders));
+    }
+
     private static RegisteredFolder Folder(string id, string rootSuffix)
     {
         var timestamp = new DateTimeOffset(2026, 7, 15, 12, 0, 0, TimeSpan.Zero);

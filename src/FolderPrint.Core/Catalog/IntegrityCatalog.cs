@@ -40,6 +40,28 @@ public sealed record IntegrityCatalog(IReadOnlyList<RegisteredFolder> Registered
         return new IntegrityCatalog(folders);
     }
 
+    public IntegrityCatalog WithRefreshedBaseline(
+        int registeredFolderIndex,
+        FolderSnapshot snapshot,
+        DateTimeOffset refreshedAtUtc)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        if (registeredFolderIndex < 0 || registeredFolderIndex >= RegisteredFolders.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(registeredFolderIndex));
+        }
+
+        var folders = RegisteredFolders.ToArray();
+        folders[registeredFolderIndex] = folders[registeredFolderIndex] with
+        {
+            LastVerifiedAtUtc = refreshedAtUtc.ToUniversalTime(),
+            Files = snapshot.Files.ToArray()
+        };
+
+        return new IntegrityCatalog(folders);
+    }
+
     public IntegrityCatalog RemoveRegisteredFolderAt(int registeredFolderIndex)
     {
         if (registeredFolderIndex < 0 || registeredFolderIndex >= RegisteredFolders.Count)

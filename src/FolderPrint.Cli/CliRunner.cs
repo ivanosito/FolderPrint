@@ -12,6 +12,7 @@ public sealed class CliRunner
     private readonly CatalogStore catalogStore;
     private readonly RegistrationService registrationService;
     private readonly UnregistrationService unregistrationService;
+    private readonly RefreshService refreshService;
     private readonly Func<string, FolderSnapshot> scanFolderForVerification;
     private readonly Func<RegisteredFolder, FolderSnapshot, VerificationResult> compareFolders;
     private readonly TextWriter output;
@@ -22,12 +23,18 @@ public sealed class CliRunner
         TextWriter? output = null,
         TextWriter? error = null,
         Func<string, FolderSnapshot>? verificationScan = null,
-        Func<RegisteredFolder, FolderSnapshot, VerificationResult>? verificationCompare = null)
+        Func<RegisteredFolder, FolderSnapshot, VerificationResult>? verificationCompare = null,
+        Func<string, FolderSnapshot>? refreshScan = null,
+        Func<DateTimeOffset>? refreshClock = null)
     {
         this.catalogStore = catalogStore ?? new CatalogStore(new CatalogPathProvider().GetCatalogPath());
         var folderScanner = new FolderScanner(new FileHasher());
         registrationService = new RegistrationService(this.catalogStore, folderScanner);
         unregistrationService = new UnregistrationService(this.catalogStore);
+        refreshService = new RefreshService(
+            this.catalogStore,
+            refreshScan ?? folderScanner.Scan,
+            refreshClock);
         scanFolderForVerification = verificationScan ?? folderScanner.Scan;
         compareFolders = verificationCompare ?? new VerificationService().Compare;
         this.output = output ?? Console.Out;
@@ -52,6 +59,7 @@ public sealed class CliRunner
                 CommandKind.Register => RunRegister(result.Command.FolderPath!),
                 CommandKind.Unregister => RunUnregister(result.Command.FolderPath!),
                 CommandKind.Verify => RunVerify(result.Command.FolderPath!),
+                CommandKind.Refresh => RunRefresh(result.Command.FolderPath!),
                 _ => result.ExitCode
             };
         }
@@ -253,6 +261,31 @@ public sealed class CliRunner
         {
             UnregistrationStatus.InvalidRoot or UnregistrationStatus.NotFound => ExitCodes.NotFound,
             UnregistrationStatus.CatalogError => ExitCodes.CatalogError,
+            _ => ExitCodes.UnexpectedError
+        };
+    }
+
+    private int RunRefresh(string folderPath)
+    {
+        var result = refreshService.Refresh(folderPath);
+        if (result.Status == RefreshStatus.Success)
+        {
+            output.WriteLine($"Refreshed folder: {result.RootPath}");
+            output.WriteLine($"Files: {result.FileCount}");
+            return ExitCodes.Success;
+        }
+
+        error.WriteLine(result.ErrorMessage);
+        foreach (var unreadableFile in result.UnreadableFiles)
+        {
+            error.WriteLine($"Unreadable: {unreadableFile}");
+        }
+
+        return result.Status switch
+        {
+            RefreshStatus.InvalidRoot or RefreshStatus.NotFound => ExitCodes.NotFound,
+            RefreshStatus.CatalogError => ExitCodes.CatalogError,
+            RefreshStatus.ScanError => ExitCodes.ScanError,
             _ => ExitCodes.UnexpectedError
         };
     }

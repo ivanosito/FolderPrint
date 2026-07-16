@@ -183,7 +183,7 @@ public sealed class RegistrationService
         return Path.TrimEndingDirectorySeparator(Path.GetFullPath(rootPath));
     }
 
-    private static bool IsPathInsideRoot(string path, string rootPath)
+    internal static bool IsPathInsideRoot(string path, string rootPath)
     {
         var rootWithSeparator = Path.EndsInDirectorySeparator(rootPath)
             ? rootPath
