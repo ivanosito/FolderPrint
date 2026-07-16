@@ -53,9 +53,9 @@ development_status:
   4-2-unregister-a-folder: done
   4-3-refresh-a-registered-folder-baseline: done
   epic-4-retrospective: done
-  epic-5: in-progress
+  epic-5: done
   5-1-implement-duplicatefinder-for-current-snapshots: done
-  5-2-wire-duplicates-folder-command: review
+  5-2-wire-duplicates-folder-command: done
   epic-5-retrospective: optional
 
 action_items:
@@ -74,4 +74,4 @@ action_items:
   - epic: 4
     action: "Keep Story 5.2 gated until Story 5.1 is done and reviewed; prove the CLI command works without registration or catalog access and preserves the Core/CLI boundary."
     owner: "Developer/Reviewer"
-    status: open
+    status: done

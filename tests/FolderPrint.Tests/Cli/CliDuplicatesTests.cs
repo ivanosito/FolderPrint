@@ -17,6 +17,7 @@ public sealed class CliDuplicatesTests : IDisposable
     {
         var root = Directory.CreateDirectory(Path.Combine(tempDirectory, "real-root")).FullName;
         var nested = Directory.CreateDirectory(Path.Combine(root, "nested")).FullName;
+        Directory.CreateDirectory(Path.Combine(root, "empty", "nested-empty"));
         var first = Write(root, "z.txt", "same");
         Write(nested, "a.txt", "same");
         Write(root, "m.txt", "same");
@@ -30,6 +31,7 @@ public sealed class CliDuplicatesTests : IDisposable
             .Select(path => new FileState(
                 path, File.ReadAllBytes(path), File.GetLastWriteTimeUtc(path), File.GetAttributes(path)))
             .ToArray();
+        var directoriesBefore = CaptureDirectoryTree(root);
         var catalogPath = Path.Combine(tempDirectory, "missing-state", "catalog.json");
         using var output = new StringWriter();
         using var error = new StringWriter();
@@ -55,6 +57,7 @@ public sealed class CliDuplicatesTests : IDisposable
             Assert.Equal(state.LastWriteUtc, File.GetLastWriteTimeUtc(state.Path));
             Assert.Equal(state.Attributes, File.GetAttributes(state.Path));
         }
+        Assert.Equal(directoriesBefore, CaptureDirectoryTree(root));
     }
 
     [Theory]
@@ -142,10 +145,13 @@ public sealed class CliDuplicatesTests : IDisposable
         Assert.Equal(0, finds);
     }
 
-    [Fact]
-    public void Run_Unreadables_SortsDiagnosticsSkipsFinderAndPreservesCatalog()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Run_UnreadableOnlyOrMixedSnapshot_SortsDiagnosticsSkipsFinderAndPreservesCatalog(
+        bool includeReadableFiles)
     {
-        var root = Directory.CreateDirectory(Path.Combine(tempDirectory, "unreadable-root")).FullName;
+        var root = Directory.CreateDirectory(Path.Combine(tempDirectory, $"unreadable-root-{includeReadableFiles}")).FullName;
         var catalogPath = Path.Combine(tempDirectory, "sentinel", "catalog.json");
         Directory.CreateDirectory(Path.GetDirectoryName(catalogPath)!);
         File.WriteAllText(catalogPath, "not-json-sentinel");
@@ -157,7 +163,10 @@ public sealed class CliDuplicatesTests : IDisposable
             new CatalogStore(catalogPath),
             output,
             error,
-            duplicateScan: _ => Snapshot(root, [Fingerprint("a.txt", 'a'), Fingerprint("b.txt", 'a')], ["z.locked", "a.locked"]),
+            duplicateScan: _ => Snapshot(
+                root,
+                includeReadableFiles ? [Fingerprint("a.txt", 'a'), Fingerprint("b.txt", 'a')] : [],
+                ["z.locked", "a.locked"]),
             duplicateFind: _ => { finds++; return [["a.txt", "b.txt"]]; });
 
         var exitCode = runner.Run(["duplicates", root]);
@@ -178,9 +187,12 @@ public sealed class CliDuplicatesTests : IDisposable
     [InlineData("unauthorized")]
     [InlineData("crypto")]
     [InlineData("child-missing")]
+    [InlineData("file-missing")]
     public void Run_ReliableScanFailure_ReturnsExactScanError(string failure)
     {
         var root = Directory.CreateDirectory(Path.Combine(tempDirectory, $"failure-{failure}")).FullName;
+        Directory.CreateDirectory(Path.Combine(root, "empty"));
+        var directoriesBefore = CaptureDirectoryTree(root);
         using var output = new StringWriter();
         using var error = new StringWriter();
         var runner = new CliRunner(
@@ -192,7 +204,8 @@ public sealed class CliDuplicatesTests : IDisposable
                 "io" => new IOException("environment detail"),
                 "unauthorized" => new UnauthorizedAccessException("environment detail"),
                 "crypto" => new CryptographicException("environment detail"),
-                _ => new DirectoryNotFoundException("child disappeared")
+                "child-missing" => new DirectoryNotFoundException("child disappeared"),
+                _ => new FileNotFoundException("child disappeared")
             });
 
         var exitCode = runner.Run(["duplicates", root]);
@@ -200,19 +213,31 @@ public sealed class CliDuplicatesTests : IDisposable
         Assert.Equal(ExitCodes.ScanError, exitCode);
         Assert.Equal(string.Empty, output.ToString());
         Assert.Equal("Folder scan failed." + Environment.NewLine, error.ToString());
+        Assert.Equal(directoriesBefore, CaptureDirectoryTree(root));
     }
 
-    [Fact]
-    public void Run_RootDisappearsDuringScan_ReturnsNotFound()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Run_RootDisappearsDuringScan_ReturnsNotFound(bool throwFileNotFound)
     {
-        var root = Directory.CreateDirectory(Path.Combine(tempDirectory, "disappearing-root")).FullName;
+        var root = Directory.CreateDirectory(Path.Combine(tempDirectory, $"disappearing-root-{throwFileNotFound}")).FullName;
         using var output = new StringWriter();
         using var error = new StringWriter();
         var runner = new CliRunner(
             new CatalogStore(Path.Combine(tempDirectory, "state-d", "catalog.json")),
             output,
             error,
-            duplicateScan: _ => { Directory.Delete(root); throw new DirectoryNotFoundException(); });
+            duplicateScan: _ =>
+            {
+                Directory.Delete(root);
+                if (throwFileNotFound)
+                {
+                    throw new FileNotFoundException();
+                }
+
+                throw new DirectoryNotFoundException();
+            });
 
         var exitCode = runner.Run(["duplicates", root]);
 
@@ -221,18 +246,28 @@ public sealed class CliDuplicatesTests : IDisposable
         Assert.Equal($"Folder was not found or is not a directory: {root}{Environment.NewLine}", error.ToString());
     }
 
-    [Fact]
-    public void Run_UnexpectedFinderFailure_SanitizesDetails()
+    [Theory]
+    [InlineData("scanner")]
+    [InlineData("finder")]
+    [InlineData("formatter")]
+    public void Run_UnexpectedPipelineFailure_SanitizesDetails(string failure)
     {
-        var root = Directory.CreateDirectory(Path.Combine(tempDirectory, "unexpected-root")).FullName;
+        var root = Directory.CreateDirectory(Path.Combine(tempDirectory, $"unexpected-root-{failure}")).FullName;
         using var output = new StringWriter();
         using var error = new StringWriter();
         var runner = new CliRunner(
             new CatalogStore(Path.Combine(tempDirectory, "unexpected", "catalog.json")),
             output,
             error,
-            duplicateScan: _ => Snapshot(root, []),
-            duplicateFind: _ => throw new InvalidOperationException("sensitive detail"));
+            duplicateScan: _ => failure == "scanner"
+                ? throw new InvalidOperationException("sensitive detail")
+                : Snapshot(root, []),
+            duplicateFind: _ => failure switch
+            {
+                "finder" => throw new InvalidOperationException("sensitive detail"),
+                "formatter" => [null!],
+                _ => []
+            });
 
         Assert.Equal(ExitCodes.UnexpectedError, runner.Run(["duplicates", root]));
         Assert.Equal(string.Empty, output.ToString());
@@ -328,9 +363,21 @@ public sealed class CliDuplicatesTests : IDisposable
         return path;
     }
 
+    private static DirectoryState[] CaptureDirectoryTree(string root) =>
+        Directory.EnumerateDirectories(root, "*", SearchOption.AllDirectories)
+            .Prepend(root)
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .Select(path => new DirectoryState(path, Directory.GetLastWriteTimeUtc(path), File.GetAttributes(path)))
+            .ToArray();
+
     private sealed record FileState(
         string Path,
         byte[] Content,
+        DateTime LastWriteUtc,
+        FileAttributes Attributes);
+
+    private sealed record DirectoryState(
+        string Path,
         DateTime LastWriteUtc,
         FileAttributes Attributes);
 }

@@ -2,7 +2,7 @@
 storyId: '5.2'
 storyKey: '5-2-wire-duplicates-folder-command'
 title: 'Wire duplicates <folder> Command'
-status: review
+status: done
 baseline_commit: 4ee8ea76db649a9185d733aab838213f4a8b2589
 epic: 'Epic 5: Find Duplicate Files On Demand'
 created: 2026-07-16
@@ -22,7 +22,7 @@ source:
 
 # Story 5.2: Wire `duplicates <folder>` Command
 
-Status: review
+Status: done
 
 ## Story
 
@@ -103,6 +103,13 @@ The intended flow is `CLI validation -> FolderScanner -> FolderSnapshot -> Dupli
   - [x] Run focused duplicate CLI/reporting tests and existing parser, scanner, finder, verification, and command tests.
   - [x] Run full Release build/tests, formatting, dependency, boundary, excluded-scope, catalog/target safety, and diff checks.
   - [x] Keep catalog, registration, finder, verification, parser, enum, exit, model, project, and package files unchanged unless a documented compatibility failure requires otherwise.
+
+### Review Findings
+
+- [x] [Review][Patch] Extend target-safety proof to directory state on success and a representative failure [tests/FolderPrint.Tests/Cli/CliDuplicatesTests.cs:16]
+- [x] [Review][Patch] Add an unreadable-only snapshot case in addition to the existing mixed snapshot [tests/FolderPrint.Tests/Cli/CliDuplicatesTests.cs:146]
+- [x] [Review][Patch] Cover unexpected scanner and formatter-materialization failures, not only finder failure [tests/FolderPrint.Tests/Cli/CliDuplicatesTests.cs:225]
+- [x] [Review][Patch] Cover FileNotFoundException reclassification while the root remains and after it disappears [tests/FolderPrint.Tests/Cli/CliDuplicatesTests.cs:181]
 
 ## Dev Notes
 
@@ -229,7 +236,7 @@ GPT-5 Codex
 
 - Red: focused build failed with CS1739 for missing duplicate seams and CS0117 for missing `FormatDuplicates`.
 - Green: 20 focused CLI/reporting tests passed after minimal production implementation.
-- Final validation: 28 focused tests and all 238 Release tests passed; Release build had zero warnings/errors.
+- Final review validation: 33 focused tests and all 243 Release tests passed; Release build had zero warnings/errors.
 - Formatting, Core reference/package, boundary, excluded-scope, catalog-safety, target-safety, and diff checks passed.
 
 ### Completion Notes List
@@ -240,6 +247,7 @@ GPT-5 Codex
 - Added pure deterministic duplicate/no-duplicate formatting without changing grouping semantics or Core/CLI dependency direction.
 - Added real scanner/finder integration and focused tests for multiple/3+ groups, empty/singleton folders, invalid targets, unreadables, scan/crypto failures, unexpected failures, catalog independence, and target safety.
 - Preserved parser, exit-code, scanner, finder, verification, catalog, registration, model, project, and package behavior.
+- Adversarial review resolved all four actionable findings with test-only patches; Story 5.2, Epic 5, and the remaining Epic 4 catalog-independence action are complete.
 
 ### File List
 
@@ -255,3 +263,4 @@ GPT-5 Codex
 
 - 2026-07-16: Created implementation-ready Story 5.2 artifact and opened the gated stretch story for development.
 - 2026-07-16: Implemented deterministic `duplicates <folder>` CLI orchestration, reporting, error mapping, and automated coverage; moved story to review.
+- 2026-07-16: Completed adversarial review, applied four test-evidence patches, passed 33 focused and 243 full Release tests, and marked the story done.
